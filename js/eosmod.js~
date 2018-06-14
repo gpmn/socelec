@@ -1,0 +1,130 @@
+// This file is required by the index.html file and will
+// be executed in the renderer process for that window.
+// All of the Node.js APIs are available in this process.
+
+var allTeams = new Map();
+allTeams.set("Argentina",   "阿根廷");
+allTeams.set("Australia",   "澳大利亚");
+allTeams.set("Belgium",     "比利时");
+allTeams.set("Brazil",      "巴西");
+allTeams.set("Colombia",    "哥伦比亚");
+allTeams.set("CostaRica",   "澳大利亚");
+allTeams.set("Croatia",     "克罗地亚");
+allTeams.set("Denmark",     "丹麦");
+allTeams.set("Egypt",       "埃及");
+allTeams.set("England",     "英格兰");
+allTeams.set("France",      "法国");
+allTeams.set("Germany",     "德国");
+allTeams.set("Iceland",     "冰岛");
+allTeams.set("Iran",        "伊朗");
+allTeams.set("Japan",       "日本");
+allTeams.set("Mexico",      "墨西哥");
+allTeams.set("Morocco",     "摩洛哥");
+allTeams.set("Nigeria",     "尼日利亚");
+allTeams.set("Panama",      "巴拿马");
+allTeams.set("Peru",        "秘鲁");
+allTeams.set("Poland",      "波兰");
+allTeams.set("Portugal",    "葡萄牙");
+allTeams.set("Russia",      "俄罗斯");
+allTeams.set("SaudiArabia", "沙特阿拉伯");
+allTeams.set("Senegal",     "塞内加尔");
+allTeams.set("Serbia",      "塞尔维亚");
+allTeams.set("Korea",       "韩国");
+allTeams.set("Spain",       "西班牙");
+allTeams.set("Sweden",      "瑞典");
+allTeams.set("Switzerland", "瑞士");
+allTeams.set("Tunisia",     "突尼斯");
+allTeams.set("Uruguay",     "乌拉圭");
+
+var allMatch = [
+    {id:1,  tm:"2018-06-14T2300:00Z08:00", desc:"FIFA2018 group match",      lteam:"Russia",         rteam:"SaudiArabia"},
+    {id:2,  tm:"2018-06-15T2000:00Z08:00", desc:"FIFA2018 group match",      lteam:"Egypt",          rteam:"Uruguay"},
+    {id:3,  tm:"2018-06-15T2300:00Z08:00", desc:"FIFA2018 group match",      lteam:"Morocco",        rteam:"Iran"},
+    {id:4,  tm:"2018-06-16T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Portugal",       rteam:"Spain"},
+    {id:5,  tm:"2018-06-16T1800:00Z08:00", desc:"FIFA2018 group match",      lteam:"France",         rteam:"Australia"},
+    {id:6,  tm:"2018-06-16T2100:00Z08:00", desc:"FIFA2018 group match",      lteam:"Argentina",      rteam:"Iceland"},
+    {id:7,  tm:"2018-06-17T0000:00Z08:00", desc:"FIFA2018 group match",      lteam:"Peru",           rteam:"Denmark"},
+    {id:8,  tm:"2018-06-17T0300:00Z08:00", desc:"FIFA2018 group match",      lteam:"Croatia",        rteam:"Nigeria"},
+    {id:9,  tm:"2018-06-17T2000:00Z08:00", desc:"FIFA2018 group match",      lteam:"CostaRica",      rteam:"Serbia"},
+    {id:10, tm:"2018-06-17T2300:00Z08:00", desc:"FIFA2018 group match",      lteam:"Germany",        rteam:"Mexico"},
+    {id:11, tm:"2018-06-18T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Brazil",         rteam:"Switzerland"},
+    {id:12, tm:"2018-06-18T2000:00Z08:00", desc:"FIFA2018 group match",      lteam:"Sweden",         rteam:"Korea"},
+    {id:13, tm:"2018-06-18T2300:00Z08:00", desc:"FIFA2018 group match",      lteam:"Belgium",        rteam:"Panama"},
+    {id:14, tm:"2018-06-19T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Tunisia",        rteam:"England"},
+    {id:15, tm:"2018-06-19T2000:00Z08:00", desc:"FIFA2018 group match",      lteam:"Colombia",       rteam:"Japan"},
+    {id:16, tm:"2018-06-19T2300:00Z08:00", desc:"FIFA2018 group match",      lteam:"Poland",         rteam:"Senegal"},
+    {id:17, tm:"2018-06-20T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Russia",         rteam:"Egypt"},
+    {id:18, tm:"2018-06-20T2000:00Z08:00", desc:"FIFA2018 group match",      lteam:"Portugal",       rteam:"Morocco"},
+    {id:19, tm:"2018-06-20T2300:00Z08:00", desc:"FIFA2018 group match",      lteam:"Uruguay",        rteam:"SaudiArabia"},
+    {id:20, tm:"2018-06-21T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Iran",           rteam:"Spain"},
+    {id:21, tm:"2018-06-21T2000:00Z08:00", desc:"FIFA2018 group match",      lteam:"Denmark",        rteam:"Australia"},
+    {id:22, tm:"2018-06-21T2300:00Z08:00", desc:"FIFA2018 group match",      lteam:"France",         rteam:"Peru"},
+    {id:23, tm:"2018-06-22T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Argentina",      rteam:"Croatia"},
+    {id:24, tm:"2018-06-22T2000:00Z08:00", desc:"FIFA2018 group match",      lteam:"Brazil",         rteam:"CostaRica"},
+    {id:25, tm:"2018-06-22T2300:00Z08:00", desc:"FIFA2018 group match",      lteam:"Nigeria",        rteam:"Iceland"},
+    {id:26, tm:"2018-06-23T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Serbia",         rteam:"Switzerland"},
+    {id:27, tm:"2018-06-23T2000:00Z08:00", desc:"FIFA2018 group match",      lteam:"Belgium",        rteam:"Tunisia"},
+    {id:28, tm:"2018-06-23T2300:00Z08:00", desc:"FIFA2018 group match",      lteam:"Korea",          rteam:"Mexico"},
+    {id:29, tm:"2018-06-24T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Germany",        rteam:"Sweden"},
+    {id:30, tm:"2018-06-24T2000:00Z08:00", desc:"FIFA2018 group match",      lteam:"England",        rteam:"Panama"},
+    {id:31, tm:"2018-06-24T2300:00Z08:00", desc:"FIFA2018 group match",      lteam:"Japan",          rteam:"Senegal"},
+    {id:32, tm:"2018-06-25T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Poland",         rteam:"Colombia"},
+    {id:33, tm:"2018-06-25T2200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Uruguay",        rteam:"Russia"},
+    {id:34, tm:"2018-06-25T2200:00Z08:00", desc:"FIFA2018 group match",      lteam:"SaudiArabia",    rteam:"Egypt"},
+    {id:35, tm:"2018-06-26T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Iran",           rteam:"Portugal"},
+    {id:36, tm:"2018-06-26T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Spain",          rteam:"Morocco"},
+    {id:37, tm:"2018-06-26T2200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Denmark",        rteam:"France"},
+    {id:38, tm:"2018-06-26T2200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Australia",      rteam:"Peru"},
+    {id:39, tm:"2018-06-27T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Nigeria",        rteam:"Argentina"},
+    {id:40, tm:"2018-06-27T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Iceland",        rteam:"Croatia"},
+    {id:41, tm:"2018-06-27T2200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Mexico",         rteam:"Sweden"},
+    {id:42, tm:"2018-06-27T2200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Korea",          rteam:"Germany"},
+    {id:43, tm:"2018-06-28T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Serbia",         rteam:"Brazil"},
+    {id:44, tm:"2018-06-28T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:" Switzerland",   rteam:"CostaRica"},
+    {id:45, tm:"2018-06-28T2200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Japan",          rteam:"Poland"},
+    {id:46, tm:"2018-06-28T2200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Senegal",        rteam:"Colombia"},
+    {id:47, tm:"2018-06-29T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"Panama",         rteam:"Tunisia"},
+    {id:48, tm:"2018-06-29T0200:00Z08:00", desc:"FIFA2018 group match",      lteam:"England",        rteam:"Belgium"},
+    {id:49, tm:"2018-06-30T2200:00Z08:00", desc:"FIFA2018 eight final",      lteam:"C1",             rteam:"D2"},
+    {id:50, tm:"2018-07-01T0200:00Z08:00", desc:"FIFA2018 eight final",      lteam:"A1",             rteam:"B2"},
+    {id:51, tm:"2018-07-01T2200:00Z08:00", desc:"FIFA2018 eight final",      lteam:"B1",             rteam:"A2"},
+    {id:52, tm:"2018-07-02T0200:00Z08:00", desc:"FIFA2018 eight final",      lteam:"D1",             rteam:"C2"},
+    {id:53, tm:"2018-07-02T2200:00Z08:00", desc:"FIFA2018 eight final",      lteam:"E1",             rteam:"F2"},
+    {id:54, tm:"2018-07-03T0200:00Z08:00", desc:"FIFA2018 eight final",      lteam:"G1",             rteam:"H2"},
+    {id:55, tm:"2018-07-03T2200:00Z08:00", desc:"FIFA2018 eight final",      lteam:"F1",             rteam:"E2"},
+    {id:56, tm:"2018-07-04T0200:00Z08:00", desc:"FIFA2018 eight final",      lteam:"H1",             rteam:"G2"},
+    {id:57, tm:"2018-07-06T2200:00Z08:00", desc:"FIFA2018 quater final",     lteam:"49 Win",         rteam:"50 Win"},
+    {id:58, tm:"2018-07-07T0200:00Z08:00", desc:"FIFA2018 quater final",     lteam:"53 Win",         rteam:"54 Win"},
+    {id:59, tm:"2018-07-07T2200:00Z08:00", desc:"FIFA2018 quater final",     lteam:"51 Win",         rteam:"52 Win"},
+    {id:60, tm:"2018-07-08T0200:00Z08:00", desc:"FIFA2018 quater final",     lteam:"55 Win",         rteam:"56 Win"},
+    {id:61, tm:"2018-07-11T0200:00Z08:00", desc:"FIFA2018 semi final",       lteam:"57 Win",         rteam:"58 Win"},
+    {id:62, tm:"2018-07-12T0200:00Z08:00", desc:"FIFA2018 semi final",       lteam:"59 Win",         rteam:"60 Win"},
+    {id:63, tm:"2018-07-14T2200:00Z08:00", desc:"FIFA2018 bronze final",     lteam:"61 Lose",        rteam:"62 Lose"},
+    {id:64, tm:"2018-07-15T2300:00Z08:00", desc:"FIFA2018 golden final",     lteam:"61 Win",         rteam:"62 Win"}
+];
+
+var eos = null;
+
+function initEos(eosAddr, activeKey){
+    //var Eos=require("node_modules/eosjs/lib/eos.js")
+    console.log("exports.initEos begin");
+    var options = {
+        httpEndpoint   : eosAddr,
+        keyProvider    : activeKey,
+        expireInSeconds: 60,
+        broadcast      : true,
+        debug          : false,
+        sign           : true
+    };
+    console.log("exports.initEos before Eos(options)");
+    eos = Eos(options);
+}
+
+function getGames(){
+    eos.getTableRows({
+        code:"soccer",
+        scope:"matches",
+        table:"match",
+        json:true,
+    }).then(result => {console.log(result)})
+}

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>FIFA 2018</title>
+        
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <style>
+         /* The slider itself */
+         .slider {
+             -webkit-appearance: none;  /* Override default CSS styles */
+             appearance: none;
+             width: 100%; /* Full-width */
+             height: 25px; /* Specified height */
+             background: #d3d3d3; /* Grey background */
+             outline: none; /* Remove outline */
+             opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+             -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+             transition: opacity .2s;
+         }
+
+         /* Mouse-over effects */
+         .slider:hover {
+             opacity: 1; /* Fully shown on mouse-over */
+         }
+
+         /* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */ 
+         .slider::-webkit-slider-thumb {
+             -webkit-appearance: none; /* Override default look */
+             appearance: none;
+             width: 25px; /* Set a specific slider handle width */
+             height: 25px; /* Slider handle height */
+             background: url('./images/football.ico');
+             background-repeat:no-repeat;
+             background-size:cover;
+             cursor: pointer; /* Cursor on hover */
+         }
+
+         .slider::-moz-range-thumb {
+             width: 25px; /* Set a specific slider handle width */
+             height: 25px; /* Slider handle height */
+             background: url('./images/football.ico');
+             background-repeat:no-repeat;
+             background-size:cover;
+             cursor: pointer; /* Cursor on hover */
+         }
+         
+         .input-group-text{
+             width:7rem;
+         }
+         .hcenter{
+             margin-right:auto;margin-left:auto;
+         }
+         .vcenter{
+             margin-top:auto;margin-bottom:auto;
+         }
+
+         .enlight :hover{
+             background:#eeeeee
+         }
+
+         .alertmsg{
+             position:fixed;
+             margin-top:20%;
+             margin-left:20%;
+             margin-right:20%;
+             width:60%;
+             z-index:999;
+         }
+         .notifymsg{
+             position:fixed;
+             margin-top:20%;
+             margin-left:20%;
+             margin-right:20%;
+             width:60%;
+             z-index:999;
+         }         
+        </style>
+
+        <script src="js/eos.js"></script>
+        <script src="js/eosmod.js"></script>
+        <script src="js/jquery-3.3.1.min.js"></script>
+        <script src="js/popper.min.js"></script>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        
+        <script>
+         function alert(msg){
+             $(".alert").remove();
+             var alert = '<div class="alert alert-warning alertmsg" role="alert">' + msg + '</div>';
+             $(alert).prependTo('body').show().delay(2000).fadeOut();
+         }
+         function notify(msg){
+             $(".alert").remove();
+             var notify = '<div class="alert alert-success notifymsg" role="alert">' + msg + '</div>';
+             $(notify).prependTo('body').show().delay(2000).fadeOut();
+         }
+
+         var confServer, confAccount, confKey;
+         var SOCCER_ACCOUNT = "soccer";
+         var allEosMatches = null;
+         
+         function onPage(page){
+             $("#id_account_page").hide();
+             $("#id_bet_page").hide();
+             $("#id_bet_link").removeClass("active");
+             $("#id_account_link").removeClass("active");
+             $("#id_" + page + "_page").show();
+             $("#id_" + page + "_link").addClass("active");
+         }
+
+         function onSave(){
+             confServer = $("#id_server").val();
+             if(confServer == ""){
+                 alert("Server invalid!");
+                 return
+             }
+             confAccount = $("#id_account").val();
+             if(confAccount == ""){
+                 alert("Account invalid!");
+                 return
+             }
+             confKey = $("#id_active_key").val();
+             if(confAccount == ""){
+                 alert("Activ key invalid!");
+                 return
+             }
+             loadMatches(confServer).then(function(e){
+                 notify("Connect to server ok, and your configuration is saved!");
+                 localStorage.setItem("server", confServer);
+                 localStorage.setItem("account", confAccount);
+                 localStorage.setItem("active_key", confKey);
+                 
+                 allEosMatches = e.rows;
+                 buildMatchList();
+                 updateCredit();
+             }).catch(function(e){
+                 alert("Can not access server, check your configuration please!");
+                 console.log("->" + e);
+             });
+         }
+
+         function buildMatchList(){
+             var matchList = $('#id_match_list');
+             matchList.empty();
+             $.each(allEosMatches, function(index, match){
+                 var item =$('<div id="id_match'+match.matchid+'_row" class="row enlight">' +/* id_matchxx_row */
+                             '<div class="col-6">' +
+                             '<div class="row text-center"><span class="text-center vcenter hcenter" id="id_match' + match.matchid + '_date"></span></div>' +/* id_matchxx_date */
+                             '<div class="row text-center"><strong class="text-center vcenter hcenter" id="id_match' + match.matchid + '_desc"></strong></div>' +/* id_matchxx_desc */
+                             '<div class="row">' +
+                             '<h3 id="id_match'+match.matchid+'_score" class="text-center vcenter hcenter"></h3>' +/* id_matchxx_score */
+                             '</div>' +
+                             '</div>' +
+                             '<div class="container col-6">' +
+                             '<div class="row">' +
+                             '<div class="col-6"><h6 id="id_match' + match.matchid +'_lTeam"></h6></div>' +/* id_matchxx_lTeam */
+                             '<div class="col-6"><h6 id="id_match' + match.matchid +'_rTeam"></h6></div>' +/* id_matchxx_rTeam */
+                             '</div>' +
+                             '<div class="row">' +
+                             '<div class="col-6"><img id="id_match' + match.matchid + '_lTeam_img" style="width:40px;height:25px" src=""></div>' +/* id_matchxx_lTeam_img */
+                             '<div class="col-6"><img id="id_match' + match.matchid + '_rTeam_img" style="width:40px;height:25px" src=""></div>' +/* id_matchxx_rTeam_img */
+                             '</div>' +
+                             '</div>' +
+                             '</div>');
+
+                 item.find("#id_match" + match.matchid + "_row").attr("matchid",match.matchid);
+                 item.find("#id_match" + match.matchid + "_lTeam").html(lTeam).attr("lTeamEn",match.lTeam);
+                 item.find("#id_match" + match.matchid + "_rTeam").html(rTeam).attr("rTeamEn",match.rTeam);
+                 var lTeam = allTeams.get(match.lTeam);
+                 var rTeam = allTeams.get(match.rTeam);
+                 var lSrc = "./teams/"+match.lTeam+".png";
+                 var rSrc = "./teams/"+match.rTeam+".png";
+                 var lWidth = "40px";
+                 var rWidth = "40px";
+                 if(lTeam == undefined){
+                     lTeam = match.lTeam;
+                     lSrc = "./images/football.png";
+                     lWidth = "25px";
+                     item.find("#id_match" + match.matchid + "_lTeam").html(lTeam).attr("lTeamCn",match.lTeam);
+                 }else{
+                     item.find("#id_match" + match.matchid + "_lTeam").html(lTeam).attr("lTeamCn",lTeam);
+                     lTeam = match.lTeam + "<br/>" + lTeam;
+                 }
+                 if(rTeam == undefined){
+                     rTeam = match.rTeam;
+                     rSrc = "./images/football.png";
+                     rWidth = "25px";
+                     item.find("#id_match" + match.matchid + "_rTeam").html(rTeam).attr("rTeamCn",match.rTeam);
+                 }else{
+                     item.find("#id_match" + match.matchid + "_rTeam").html(rTeam).attr("rTeamCn",rTeam);
+                     rTeam = match.rTeam + "<br/>" + rTeam;                     
+                 }
+                 
+                 item.find("#id_match" + match.matchid + "_lTeam_img").attr("src", lSrc).css("width",lWidth);
+                 item.find("#id_match" + match.matchid + "_rTeam_img").attr("src", rSrc).css("width",rWidth);
+
+                 var tm = new Date();
+                 tm.setTime(match.tmBegin * 1000);
+                 var minStr = tm.getMinutes();
+                 if(minStr == "0"){
+                     minStr = "00";
+                 }
+                 var tmStr = "" + tm.getFullYear() + "-" + tm.getMonth() + "-" + tm.getDate() + " " + tm.getHours() + ":" + minStr;
+                 item.find("#id_match" + match.matchid + "_date").text(tmStr);
+                 item.find("#id_match" + match.matchid + "_desc").text(match.desc);
+                 item.find("#id_match" + match.matchid + "_score").text("TBS.");
+                 if(index % 2 == 0){
+                     item.css("background-color","#f8ffff");
+                 }else{
+                     item.css("background-color","#fffff8");
+                 }
+                 item.children("*").unbind().click(function(){
+                     setupOverview(match.matchid);
+                     setupMyBet(match.matchid);
+                     updateCredit();
+                     $("#id_bet_overview_title div:eq(0) h4").html(lTeam);
+                     $("#id_bet_overview_title div:eq(3) h4").html(rTeam);
+                     $("#id_bet_overview_title div:eq(1) img").attr("src",lSrc).css("width", lWidth);
+                     $("#id_bet_overview_title div:eq(2) img").attr("src",rSrc).css("width", rWidth);
+                     $("#id_mybet_title").text("Bet of "+ confAccount);
+                 });
+                 matchList.append(item);
+             });
+         }
+
+         function setupOverview(matchid){
+             loadGames(confServer, matchid).then(function(e){
+                 $.each(e.rows, function(index, game){
+                     var idstr = null;
+                     if(game.concede >= 0){
+                         idstr = "#id_ov_concede_p" + game.concede;
+                     }else{
+                         idstr = "#id_ov_concede_n"+ (-game.concede);
+                     }
+                     $(idstr).attr("gameid", game.gameid).attr("matchid", matchid);
+                     var amountStr = game.win.replace(/ SYS/, "");
+                     if(amountStr == "0.0000"){
+                         amountStr = "";
+                     }
+                     $(idstr + " div:eq(1)").text(amountStr);
+                     
+                     amountStr = game.punch.replace(/ SYS/, "");
+                     if(amountStr == "0.0000"){
+                         amountStr = "";
+                     }
+                     $(idstr + " div:eq(2)").text(amountStr);
+                     
+                     amountStr = game.lose.replace(/ SYS/, "");
+                     if(amountStr == "0.0000"){
+                         amountStr = "";
+                     }
+                     $(idstr + " div:eq(3)").text(amountStr);
+                     if(index % 2 == 0){
+                         $(idstr).css("background-color","#f8fff8");
+                     }else{
+                         $(idstr).css("background-color","#fff8f8");
+                     }                     
+                 });
+             }).catch(function(e){
+                 alert("load match from EOS failed!");
+             });
+         }
+
+         function onBet(matchid, concede, side){
+             console.log("onBet " + matchid + ", " + concede + ", " + side);
+             var lTeamEn = $("#id_match" + matchid + "_lTeam").attr("lTeamEn");
+             var rTeamEn = $("#id_match" + matchid + "_rTeam").attr("rTeamEn");
+             var lTeamCn = $("#id_match" + matchid + "_lTeam").attr("lTeamCn");
+             var rTeamCn = $("#id_match" + matchid + "_rTeam").attr("rTeamCn");
+             
+             $("#id_bet_modal").attr("a_matchid", matchid);
+             $("#id_bet_modal").attr("a_concede", concede);
+             $("#id_bet_modal").attr("a_side", side);
+             $("#id_bet_modal").attr("a_lTeamEn", lTeamEn);
+             $("#id_bet_modal").attr("a_lTeamCn", lTeamCn);
+             $("#id_bet_modal").attr("a_rTeamEn", rTeamEn);
+             $("#id_bet_modal").attr("a_rTeamCn", rTeamCn);
+             
+             var descCn, descEn;
+             if(side > 0){
+                 descCn = '你正在押注 俄罗斯 V.S. 沙特阿拉伯 净胜球大于CONCEDE。<br/>' + 
+                          '如果俄罗斯胜CONCEDE球以上，那么你获胜。<br/>' + 
+                          '如果俄罗斯净胜CONCEDE球或者更少，那么你将失去押注本金。';
+                 descEn = 'You are betting Russia V.S. SaudiArabia will more than CONCEDE goal.<br/>' +
+                          'If Russia win more than CONCEDE goal, You win.<br/>' + 
+                          'Otherwise your will lost your bet.';
+             }else if(side == 0){
+                 descCn = '你正在押注 俄罗斯 V.S. 沙特阿拉伯 净胜球等于CONCEDE。<br/>' + 
+                          '如果俄罗斯恰好胜CONCEDE球，那么你获胜。<br/>' + 
+                          '其他情况你将失去押注本金。';
+                 descEn = 'You are betting Russia V.S. SaudiArabia will exactly CONCEDE goal.<br/>' +
+                          'If Russia win exactly CONCEDE goal, You win.<br/>' + 
+                          'Otherwise your will lost your bet.';
+             }else {
+                 descCn = '你正在押注 俄罗斯 V.S. 沙特阿拉伯 净胜球小于CONCEDE。<br/>' + 
+                          '如果俄罗斯净胜CONCEDE球以下，那么你获胜。<br/>' + 
+                          '其他情况你将失去押注本金。';
+                 descEn = 'You are betting Russia V.S. SaudiArabia will less than CONCEDE goal.<br/>' +
+                          'If Russia lost more than CONCEDE goals, You win.<br/>' + 
+                          'Otherwise your will lost your bet.';
+             }
+             descCn = descCn = descCn.replace(/俄罗斯/g, lTeamCn).replace(/沙特阿拉伯/g, rTeamCn).replace(/CONCEDE/g, "" + concede);
+             descEn = descEn.replace(/Russia/g, lTeamEn).replace(/SaudiArabia/g, rTeamEn).replace(/CONCEDE/g, "" + concede);
+             
+             $("#id_bet_modal_desc_cn").html(descCn);
+             $("#id_bet_modal_desc_en").html(descEn);
+             
+             $('#id_bet_modal').show().modal();
+         }
+
+         function onSubmitBet(clear){
+             var matchid = $("#id_bet_modal").attr("a_matchid");
+             var concede = parseInt($("#id_bet_modal").attr("a_concede"));
+             var side = parseInt($("#id_bet_modal").attr("a_side"));
+             var lTeamEn = $("#id_bet_modal").attr("a_lTeamEn");
+             var lTeamCn = $("#id_bet_modal").attr("a_lTeamCn");
+             var rTeamEn = $("#id_bet_modal").attr("a_rTeamEn");
+             var rTeamCn = $("#id_bet_modal").attr("a_rTeamCn");
+             var money = "" + parseFloat($("#id_bet_price").val()).toFixed(4) + " SYS";
+             if(clear == 'clear'){
+                 money = "0.0000 SYS";
+             }
+             var gameid = parseInt(matchid) + parseInt(concede) + 5 + 1;
+             console.log("" + confServer + ", "
+                       + confAccount + ", "
+                       + confKey + ", "
+                       + gameid + ", "
+                       + money + ", "
+                       + side + ", "
+                       + lTeamEn + ", "
+                       + rTeamEn + ", "
+                       + concede);
+
+             submitBet(confServer, confAccount, confKey, gameid, money, side, lTeamEn, rTeamEn,
+                       concede).then(function(e){
+                           notify("submit to EOS OK, transition id : " + e.transaction_id);
+                           console.log("submit to EOS OK, transition id : " + e.transaction_id);
+                           $('#id_bet_modal').modal('hide');
+                           $("#id_match"+matchid+"_date").trigger("click");
+                       }).catch(function(e){
+                           console.log("submit failed -> " + JSON.stringify(e));
+                           $('#id_bet_modal').modal('hide');
+                           alert("submit to EOS failed!");
+                       });
+         }
+         
+         function setupMyBet(matchid){
+             loadUserBet(confServer, matchid, confAccount).then(function(reses){
+                 $.each(reses, function(idx, res){
+                     var idstr = null;
+                     if(idx - 5 >= 0){
+                         idstr = "#id_mine_concede_p" + (idx - 5);
+                     }else{
+                         idstr = "#id_mine_concede_n"+ (5 - idx);
+                     }
+                     $(idstr + " a:eq(0)").text("").unbind().click(()=>onBet(matchid, idx - 5, 1));
+                     $(idstr + " a:eq(1)").text("").unbind().click(()=>onBet(matchid, idx - 5, 0));
+                     $(idstr + " a:eq(2)").text("").unbind().click(()=>onBet(matchid, idx - 5, -1));
+                     if(res.rows.length == 0 || res.rows[0].account != confAccount || res.rows[0].gameid != matchid + idx + 1){
+                         $(idstr + " a").text("");
+                     }else{
+                         var valStr = res.rows[0].money.replace(/ SYS/, "");
+                         if(res.rows[0].side > 0){
+                             $(idstr + " a:eq(0)").text(valStr);
+                         }else if(res.rows[0].side == 0){
+                             $(idstr + " a:eq(1)").text(valStr);
+                         }else{
+                             $(idstr + " a:eq(2)").text(valStr);
+                         }
+                     }
+                     if(idx % 2 == 0){
+                         $(idstr).css("background-color","#f8fff8");
+                     }else{
+                         $(idstr).css("background-color","#fff8f8");
+                     }
+                 });
+             }).catch(function(e){
+                 console.log("loadUserBet -> failed : " + JSON.stringify(e));
+                 alert("load " + confAccount + "'s bet failed!");
+             });                 
+         }
+
+         function updateCredit(){
+             confAccount = $("#id_account").val();
+             $("#id_name_code").text("Name Code : " + Eos.modules.format.encodeName(confAccount, false));
+             getCredit(confServer, confAccount).then(function(res){
+                 console.log("updateCredit OK -> ", JSON.stringify(res));
+                 console.log(res.rows[0].account, confAccount);
+                 $('#id_current_account').html("<h4>Account : " + confAccount + "</h4>")
+                 if(res.rows[0].account == confAccount){                     
+                     $('#id_credit').html("<strong>" + res.rows[0].money + "</strong>");
+                 }else{
+                     $('#id_credit').html("<strong>-.---- SYS</strong>");
+                 }
+             }).catch(function(res){
+                 console.log("updateCredit failed -> ", JSON.stringify(res));
+                 $('#id_credit').html("<strong>-.---- SYS</strong>");
+                 alert("query credit for " + confAccount + " failed!");
+             })
+             
+         }
+         
+         $(window).ready(function(){
+             onPage("bet");
+
+             confServer = localStorage.getItem("server");
+             confAccount = localStorage.getItem("account");
+             confKey = localStorage.getItem("active_key");
+             $("#id_server").val(confServer);
+             $("#id_account").val(confAccount);
+             $("#id_active_key").val(confKey);
+             console.log("confAccount is : ", confAccount);
+             
+             loadMatches(confServer).then(function(e){
+                 notify("Connect to server ok!");
+                 allEosMatches = e.rows;
+                 buildMatchList();
+                 updateCredit();
+             }).catch(function(e){
+                 alert("Can not access server, check your configuration please!");
+                 console.log("->" + e);
+             });             
+         });
+        </script>
+    </head>
+    
+    <body>
+        <div class="modal" id="id_bet_modal" tabindex="-1" role="dialog" aria-labelledby="id_bet_modal_label" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="id_bet_modal_label">确认下注 Confirm Bet</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="id_bet_modal_desc_cn" class="text-danger"></div>
+                        <div class="dropdown-divider"></div>
+                        <div id="id_bet_modal_desc_en" class="text-danger"></div>
+                        <div class="dropdown-divider"></div>
+                        <div class="row">
+                            <div class="col-6">
+                                <input id="id_bet_price" type="range" min="0.1" max="1" value="0.1" step="0.01" class="slider" id="myRange" oninput="$('#id_bet_price_label').text('BET ' + $('#id_bet_price').val() + ' SYS')">
+                            </div>
+                            <div class="col-4"><strong id="id_bet_price_label" >BET 0.1 SYS</strong></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-warning" hint="take back bet from game." onclick="onSubmitBet('clear')">Clear</button>
+                        <button type="button" class="btn btn-primary" hint="submit bet to EOS" onclick="onSubmitBet()">Submit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="navbar navbar-expand navbar-dark bg-dark">
+            <div class="collapse navbar-collapse" id="titleBar">
+                <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+                    <li class="nav-item">
+                        <a id="id_bet_link" class="nav-link active" href="#" onclick="onPage('bet');">Bet</a>
+                    </li>
+                    <li class="nav-item">
+                        <a id="id_account_link" class="nav-link" href="#" onclick="onPage('account');">Configure</a>
+                    </li>
+                </ul>
+            </div>
+            <span id="id_current_account" class="text-light">
+                <h4>Account : ----</h4>
+            </span>
+            <span style="width:3rem"></span>
+            <span id="id_credit" class="text-light">
+                <strong>-.---- SYS</strong>
+            </span>
+            <span style="width:3rem"></span>
+            <a class="navbar-brand" href="#"><img src="images/FIFAWorldCup.png" style="height:3rem;width:3rem"></img>FIFA2018</a>
+        </nav>
+        
+        <div id="id_account_page" class="card hcenter" style="width:40rem;margin-top:2rem">
+            <div class="card-header">
+                <H3>Config Your Account</H3>                
+            </div>
+            
+            <div class="card-body">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">Server addr</span>
+                    </div>
+                    <input class="form-control" id="id_server" aria-describedby="basic-addon3" type="url">
+                </div>
+
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">Account</span>
+                    </div>
+                    <input class="form-control" id="id_account" aria-describedby="basic-addon3" type="text"
+                           placeholder="account" onchange="updateCredit()">
+                    <div class="input-group-append">
+                        <span id="id_name_code" style="width:18rem" class="input-group-text"></span>
+                    </div>
+                </div>
+
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">Active key</span>
+                    </div>
+                    <input class="form-control" id="id_active_key" aria-describedby="basic-addon3" type="password" placeholder="active key of account">
+                </div>
+                <div class="input-group mb-3">
+                    <span>First, we strongly recommend to <span class="text-danger">create a dummy acount</span> to play this game!</span>
+                    <span>Second, active key is enough, <span class="text-danger">don't input your owner key!</span></span>
+                </div>
+                
+                <div class="input-group mb-3">
+                    <a href="#" class="btn btn-primary hcenter" onclick="onSave()">Save</a>
+                </div>
+                
+            </div>            
+        </div>
+        
+        <div id="id_bet_page">
+            <div>
+                <div class="row">
+                    <div id="id_match_list" class="col-6 pre-scrollable" style="min-height:720px">
+                    </div>
+                    <div id="id_game_list" class="col-6">
+                        <div id="id_bet_overview_title" class="bg-dark row text-white">
+                            <div class="col-4">
+                                <h4 style="text-align:center">--</h4>
+                            </div>
+                            <div class="col-2">
+                                <img style="width:25px;height:25px;margin:5px" src="./images/football.png">
+                            </div>
+                            <div class="col-2">
+                                <img style="width:25px;height:25px;margin:5px" src="./images/football.png">
+                            </div>
+                            <div class="col-4">
+                                <h4 style="text-align:center">--</h4>
+                            </div>
+                        </div>
+                        
+                        <div class="row bg-dark text-white">
+                            <h4 class="vcenter hcenter">Overview</h4>
+                        </div>
+                        <div class="row">
+                            <div class="col-3"><h6></h6></div>
+                            <div class="col-3"><h6>胜Win</h6></div>
+                            <div class="col-3"><h6>平Punch</h6></div>
+                            <div class="col-3"><h6>负Lose</h6></div>
+                        </div>
+
+                        <div id="id_ov_concede_n5" class="row">
+                            <div class="col-3"><strong>-5球</strong></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                        </div>
+                        <div id="id_ov_concede_n4" class="row">
+                            <div class="col-3"><strong>-4球</strong></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                        </div>                            
+                        <div id="id_ov_concede_n3" class="row">
+                            <div class="col-3"><strong>-3球</strong></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                        </div>                            
+                        <div id="id_ov_concede_n2" class="row">
+                            <div class="col-3"><strong>-2球</strong></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                        </div>                            
+                        <div id="id_ov_concede_n1" class="row">
+                            <div class="col-3"><strong>-1球</strong></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                        </div>                            
+                        <div id="id_ov_concede_p0" class="row">
+                            <div class="col-3"><strong>0球</strong></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                        </div>                            
+                        <div id="id_ov_concede_p1" class="row">
+                            <div class="col-3"><strong>1球</strong></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                        </div>                            
+                        <div id="id_ov_concede_p2" class="row">
+                            <div class="col-3"><strong>2球</strong></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                        </div>                            
+                        <div id="id_ov_concede_p3" class="row">
+                            <div class="col-3"><strong>3球</strong></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                        </div>
+                        <div id="id_ov_concede_p4" class="row">
+                            <div class="col-3"><strong>4球</strong></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                        </div>
+                        <div id="id_ov_concede_p5" class="row">
+                            <div class="col-3"><strong>5球</strong></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                            <div class="col-3"></div>
+                        </div>
+                        
+                        <div class="row bg-dark text-white">
+                            <h4 id="id_mybet_title" class="hcenter vcenter">My Bet</h4>
+                        </div>
+                        <div class="row">
+                            <div class="col-3"><h6></h6></div>
+                            <div class="col-3"><h6>胜Win</h6></div>
+                            <div class="col-3"><h6>平Punch</h6></div>
+                            <div class="col-3"><h6>负Lose</h6></div>
+                        </div>
+                        
+                        <div id="id_mine_concede_n5" class="row enlight">
+                            <div class="col-3"><strong>-5球</strong></div>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                        </div>                            
+                        <div id="id_mine_concede_n4" class="row enlight">
+                            <div class="col-3"><strong>-4球</strong></div>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                        </div>                            
+                        <div id="id_mine_concede_n3" class="row enlight">
+                            <div class="col-3"><strong>-3球</strong></div>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                        </div>                            
+                        <div id="id_mine_concede_n2" class="row enlight">
+                            <div class="col-3"><strong>-2球</strong></div>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                        </div>                            
+                        <div id="id_mine_concede_n1" class="row enlight">
+                            <div class="col-3"><strong>-1球</strong></div>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                        </div>                            
+                        <div id="id_mine_concede_p0" class="row enlight">
+                            <div class="col-3"><strong>0球</strong></div>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                        </div>                            
+                        <div id="id_mine_concede_p1" class="row enlight">
+                            <div class="col-3"><strong>1球</strong></div>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                        </div>
+                        <div id="id_mine_concede_p2" class="row enlight">
+                            <div class="col-3"><strong>2球</strong></div>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                        </div>                            
+                        <div id="id_mine_concede_p3" class="row enlight">
+                            <div class="col-3"><strong>3球</strong></div>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                        </div>
+                        <div id="id_mine_concede_p4" class="row enlight">
+                            <div class="col-3"><strong>4球</strong></div>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                        </div>
+                        <div id="id_mine_concede_p5" class="row enlight">
+                            <div class="col-3"><strong>5球</strong></div>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                            <a href="#" class="col-3"></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </body>
+    
+</html>
+
