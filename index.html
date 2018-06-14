@@ -261,6 +261,28 @@
              });
          }
 
+         function onDeposit(money){
+             deposit(confServer, confAccount, confKey, money).then(function(e){
+                 console.log("onDeposit OK -> " + JSON.stringify(e));
+                 notify(confAccount + " despoit " + money + " to soccer account OK!");
+                 updateCredit();
+             }).catch(function(e){
+                 console.log("onDeposit failed -> " + JSON.stringify(e));
+                 alert(confAccount + " failed to despoit " + money + "!");
+             })
+         }
+         /* function onWithdrawAll(){
+          *     var money = $('#id_credit').attr("creditval");
+          *     withdraw(confServer, confAccount, confKey, money).then(function(e){
+          *         console.log("onWithdrawAll OK -> " + JSON.stringify(e));
+          *         notify(confAccount + " withdraw " + money + " OK!");
+          *         updateCredit();
+          *     }).catch(function(e){
+          *         console.log("onWithdrawAll failed -> " + JSON.stringify(e));
+          *         notify(confAccount + " withdraw " + money + " failed!");
+          *         alert(confAccount + " failed to withdraw!");
+          *     })
+          * }*/
          function onBet(matchid, concede, side){
              console.log("onBet " + matchid + ", " + concede + ", " + side);
              var lTeamEn = $("#id_match" + matchid + "_lTeam").attr("lTeamEn");
@@ -386,15 +408,18 @@
              getCredit(confServer, confAccount).then(function(res){
                  console.log("updateCredit OK -> ", JSON.stringify(res));
                  console.log(res.rows[0].account, confAccount);
-                 $('#id_current_account').html("<h4>Account : " + confAccount + "</h4>")
+                 $('#id_current_account').html("<strong>"+confAccount+"</strong>");
                  if(res.rows[0].account == confAccount){                     
                      $('#id_credit').html("<strong>" + res.rows[0].money + "</strong>");
+                     $('#id_credit').attr("creditval", res.rows[0].money);
                  }else{
                      $('#id_credit').html("<strong>-.---- SYS</strong>");
+                     $('#id_credit').attr("creditval", "0.0000 SYS");
                  }
              }).catch(function(res){
                  console.log("updateCredit failed -> ", JSON.stringify(res));
                  $('#id_credit').html("<strong>-.---- SYS</strong>");
+                 $('#id_credit').attr("creditval", "0.0000 SYS");
                  alert("query credit for " + confAccount + " failed!");
              })
              
@@ -457,7 +482,7 @@
         
         <nav class="navbar navbar-expand navbar-dark bg-dark">
             <div class="collapse navbar-collapse" id="titleBar">
-                <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+                <ul class="navbar-nav">
                     <li class="nav-item">
                         <a id="id_bet_link" class="nav-link active" href="#" onclick="onPage('bet');">Bet</a>
                     </li>
@@ -466,11 +491,17 @@
                     </li>
                 </ul>
             </div>
-            <span id="id_current_account" class="text-light">
-                <h4>Account : ----</h4>
-            </span>
-            <span style="width:3rem"></span>
-            <span id="id_credit" class="text-light">
+            <div class="btn-group" style="width:6rem">
+                <button id="id_current_account" type="button" class="btn btn-dark dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <strong>----</strong>
+                </button>
+                <div class="dropdown-menu bg-dark">
+                    <a class="text-light dropdown-item" href="#" onclick="onDeposit('1.0000 SYS');">Deposit 1 EOS</a>
+                    <a class="text-light dropdown-item" href="#" onclick="onDeposit('10.0000 SYS');">Deposit 10 EOS</a>
+                    <a class="text-light dropdown-item" href="#" onclick="onDeposit('100.0000 SYS');">Deposit 100 EOS</a>
+                </div>
+            </div>
+            <span id="id_credit" class="text-light" creditval="0.0000 SYS">
                 <strong>-.---- SYS</strong>
             </span>
             <span style="width:3rem"></span>

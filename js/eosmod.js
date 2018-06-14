@@ -221,3 +221,64 @@ function submitBet(eosAddr, account, activeKey, gameid, money, side, lTeam, rTea
         ]
     })
 }
+
+function deposit(eosAddr, account, activeKey, money){
+    var options = {
+        httpEndpoint   : eosAddr,
+        keyProvider    : [activeKey],
+        expireInSeconds: 60,
+        broadcast      : true,
+        debug          : false,        
+        sign           : true
+    };
+
+    console.log("money is " + money);
+    var eos = Eos(options);
+    return eos.transaction({
+        actions: [
+            {
+                account: 'eosio.token',
+                name: 'transfer',
+                authorization: [{
+                    actor: account,
+                    permission: 'active'
+                }],
+                data: {
+                    from: account,
+                    to: "soccer",
+                    quantity: money,
+                    memo:"withdraw from socelec."
+                }
+            }
+        ]
+    })
+}
+
+/* function withdraw(eosAddr, account, activeKey, money){
+ *     var options = {
+ *         httpEndpoint   : eosAddr,
+ *         keyProvider    : activeKey,
+ *         expireInSeconds: 60,
+ *         broadcast      : true,
+ *         debug          : false,        
+ *         sign           : true
+ *     };
+ * 
+ *     var eos = Eos(options);
+ *     return eos.transaction({
+ *         actions: [
+ *             {
+ *                 account: "soccer",
+ *                 name: "withdraw",
+ *                 authorization: [{
+ *                     actor: account,
+ *                     permission: 'active'
+ *                 }],
+ *                 data: {
+ *                     account: account,
+ *                     quantity: money,
+ *                 }
+ *             }
+ *         ]
+ *     })
+ * }*/
