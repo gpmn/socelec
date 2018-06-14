@@ -11,3 +11,5 @@
 
   then run it with electron:  
   electron .
+
+![alt text](https://github.com/gpmn/socelec/blob/master/screenshot.png?raw=true)
