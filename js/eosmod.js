@@ -247,7 +247,7 @@ function deposit(eosAddr, account, activeKey, money){
                     from: account,
                     to: "soccer",
                     quantity: money,
-                    memo:"withdraw from socelec."
+                    memo:"deposit to socelec."
                 }
             }
         ]
@@ -263,7 +263,7 @@ function deposit(eosAddr, account, activeKey, money){
  *         debug          : false,        
  *         sign           : true
  *     };
- * 
+ *     
  *     var eos = Eos(options);
  *     return eos.transaction({
  *         actions: [
@@ -281,4 +281,4 @@ function deposit(eosAddr, account, activeKey, money){
  *             }
  *         ]
  *     })
- * }*/
+ * } */

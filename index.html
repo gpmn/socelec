@@ -98,7 +98,7 @@
          var confServer, confAccount, confKey;
          var SOCCER_ACCOUNT = "soccer";
          var allEosMatches = null;
-         
+
          function onPage(page){
              $("#id_account_page").hide();
              $("#id_bet_page").hide();
@@ -271,6 +271,7 @@
                  alert(confAccount + " failed to despoit " + money + "!");
              })
          }
+
          /* function onWithdrawAll(){
           *     var money = $('#id_credit').attr("creditval");
           *     withdraw(confServer, confAccount, confKey, money).then(function(e){
@@ -282,7 +283,8 @@
           *         notify(confAccount + " withdraw " + money + " failed!");
           *         alert(confAccount + " failed to withdraw!");
           *     })
-          * }*/
+          * } */
+         
          function onBet(matchid, concede, side){
              console.log("onBet " + matchid + ", " + concede + ", " + side);
              var lTeamEn = $("#id_match" + matchid + "_lTeam").attr("lTeamEn");
@@ -491,16 +493,19 @@
                     </li>
                 </ul>
             </div>
+            
             <div class="btn-group" style="width:6rem">
                 <button id="id_current_account" type="button" class="btn btn-dark dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <strong>----</strong>
                 </button>
                 <div class="dropdown-menu bg-dark">
+                    <!-- <a class="text-light dropdown-item" href="#" onclick="onWithdrawAll();">Withdraw All</a> -->
                     <a class="text-light dropdown-item" href="#" onclick="onDeposit('1.0000 SYS');">Deposit 1 EOS</a>
                     <a class="text-light dropdown-item" href="#" onclick="onDeposit('10.0000 SYS');">Deposit 10 EOS</a>
                     <a class="text-light dropdown-item" href="#" onclick="onDeposit('100.0000 SYS');">Deposit 100 EOS</a>
                 </div>
             </div>
+            
             <span id="id_credit" class="text-light" creditval="0.0000 SYS">
                 <strong>-.---- SYS</strong>
             </span>
