@@ -86,16 +86,16 @@
         <script>
          function alert(msg){
              $(".alert").remove();
-             var alert = '<div class="alert alert-warning alertmsg" role="alert">' + msg + '</div>';
-             $(alert).prependTo('body').show().delay(2000).fadeOut();
+             var alert = '<div class="alert bg-danger text-light alertmsg" role="alert"><h5>' + msg + '</h5></div>';
+             $(alert).prependTo('body').show().delay(3000).fadeOut();
          }
          function notify(msg){
              $(".alert").remove();
-             var notify = '<div class="alert alert-success notifymsg" role="alert">' + msg + '</div>';
-             $(notify).prependTo('body').show().delay(2000).fadeOut();
+             var notify = '<div class="alert bg-success text-light notifymsg" role="alert"><h5>' + msg + '</h5></div>';
+             $(notify).prependTo('body').show().delay(3000).fadeOut();
          }
 
-         var confServer, confAccount, confKey;
+         var confServer, confAccount, confKey, confCoreSymbol;
          var allEosMatches = null;
 
          function onPage(page){
@@ -123,11 +123,23 @@
                  alert("Activ key invalid!");
                  return
              }
+             SOCCER_ACCOUNT = $("#id_contract_owner").val();
+             if(SOCCER_ACCOUNT == ""){
+                 alert("contract owner invalid");
+                 return;
+             }
+             confCoreSymbol = $("#id_core_symbol").val();
+             if(confCoreSymbol != "EOS" && confCoreSymbol != "SYS"){
+                 alert("EOS symbol invalid!");
+                 return;
+             }
              loadMatches(confServer).then(function(e){
                  notify("Connect to server ok, and your configuration is saved!");
                  localStorage.setItem("server", confServer);
                  localStorage.setItem("account", confAccount);
                  localStorage.setItem("active_key", confKey);
+                 localStorage.setItem("contract_owner", SOCCER_ACCOUNT);
+                 localStorage.setItem("core_symbol", confCoreSymbol);
                  
                  allEosMatches = e.rows;
                  buildMatchList();
@@ -143,12 +155,12 @@
              var matchList = $('#id_match_list');
              matchList.empty();
              $.each(allEosMatches, function(index, match){
-                 var item =$('<div id="id_match'+match.matchid+'_row" class="row enlight">' +/* id_matchxx_row */
+                 var item =$('<div id="id_match'+match.matchid+'_row" class="row">' +/* id_matchxx_row */
                              '<div class="col-6">' +
-                             '<div class="row text-center"><span class="text-center vcenter hcenter" id="id_match' + match.matchid + '_date"></span></div>' +/* id_matchxx_date */
+                             '<div class="row text-center"><span class="text-center vcenter hcenter col-6" id="id_match' + match.matchid + '_date"></span><strong class="col-6 text-danger text-right" id="id_match' + match.matchid + '_disabled"></strong></div>' +/* id_matchxx_date */
                              '<div class="row text-center"><strong class="text-center vcenter hcenter" id="id_match' + match.matchid + '_desc"></strong></div>' +/* id_matchxx_desc */
                              '<div class="row">' +
-                             '<h3 id="id_match'+match.matchid+'_score" class="text-center vcenter hcenter"></h3>' +/* id_matchxx_score */
+                             '<h2 id="id_match'+match.matchid+'_score" class="text-center vcenter hcenter"></h2>' +/* id_matchxx_score */
                              '</div>' +
                              '</div>' +
                              '<div class="container col-6">' +
@@ -200,18 +212,33 @@
                  if(minStr == "0"){
                      minStr = "00";
                  }
-                 var tmStr = "" + tm.getFullYear() + "-" + tm.getMonth() + "-" + tm.getDate() + " " + tm.getHours() + ":" + minStr;
+                 var tmStr = "" + tm.getFullYear() + "-" + (1 + tm.getMonth()) + "-" + tm.getDate() + " " + tm.getHours() + ":" + minStr;
                  item.find("#id_match" + match.matchid + "_date").text(tmStr);
                  item.find("#id_match" + match.matchid + "_desc").text(match.desc);
-                 item.find("#id_match" + match.matchid + "_score").text("TBS.");
-                 if(index % 2 == 0){
-                     item.css("background-color","#f8ffff");
+                 if(match.lScore >= 0 && match.rScore >= 0){
+                     item.find("#id_match" + match.matchid + "_score").text("" + match.lScore + " : " + match.rScore);
                  }else{
-                     item.css("background-color","#fffff8");
+                     item.find("#id_match" + match.matchid + "_score").text("-- : --");
                  }
+                 var allowBet = true;
+                 var tmNow = new Date();
+                 //console.log("" + match.lTeam + ":" + match.rTeam + " - " + match.matchid + " tmBegin : " + match.tmBegin + ", now:" + (tmNow.getTime()/1000));
+                 if(match.status == 1 && match.tmBegin >= tmNow.getTime()/1000 + 60 * 10){/* not freezed and 10 mins before game */
+                     if(index % 2 == 0){
+                         item.css("background-color","#f8ffff");
+                     }else{
+                         item.css("background-color","#fffff8");
+                     }
+                     item.addClass("enlight");
+                 }else{
+                     allowBet = false;
+                     item.css("background-color","#dddddd");
+                     item.find("#id_match" + match.matchid + "_disabled").text("bet freezed");
+                 }
+
                  item.children("*").unbind().click(function(){
                      setupOverview(match.matchid);
-                     setupMyBet(match.matchid);
+                     setupMyBet(match.matchid, allowBet);
                      updateCredit();
                      updateStats();
                      $("#id_bet_overview_title div:eq(0) h4").html(lTeam);
@@ -220,10 +247,23 @@
                      $("#id_bet_overview_title div:eq(2) img").attr("src",rSrc).css("width", rWidth);
                      $("#id_mybet_title").text("Bet of "+ confAccount);
                  });
+                 
                  matchList.append(item);
              });
          }
 
+         function mytrim(str){
+             if(confCoreSymbol == 'SYS'){
+                 return str.replace(/ SYS/, "");
+             }else if (confCoreSymbol == 'EOS'){
+                 return str.replace(/ EOS/, "");
+             }else{
+                 console.log("core symbol '" + confCoreSymbol + "' invalid");
+                 alert("core symbol '" + confCoreSymbol + "' invalid");
+                 return str;
+             }
+         }
+         
          function setupOverview(matchid){
              loadGames(confServer, matchid).then(function(e){
                  $.each(e.rows, function(index, game){
@@ -234,19 +274,19 @@
                          idstr = "#id_ov_concede_n"+ (-game.concede);
                      }
                      $(idstr).attr("gameid", game.gameid).attr("matchid", matchid);
-                     var amountStr = game.win.replace(/ SYS/, "");
+                     var amountStr = mytrim(game.win);
                      if(amountStr == "0.0000"){
                          amountStr = "";
                      }
                      $(idstr + " div:eq(1)").text(amountStr);
                      
-                     amountStr = game.punch.replace(/ SYS/, "");
+                     amountStr = mytrim(game.punch);
                      if(amountStr == "0.0000"){
                          amountStr = "";
                      }
                      $(idstr + " div:eq(2)").text(amountStr);
                      
-                     amountStr = game.lose.replace(/ SYS/, "");
+                     amountStr = mytrim(game.lose);
                      if(amountStr == "0.0000"){
                          amountStr = "";
                      }
@@ -277,12 +317,12 @@
              var money = $('#id_credit').attr("creditval");
              applyWithdraw(confServer, confAccount, confKey, money).then(function(e){
                  console.log("onApplyWithdraw OK -> " + JSON.stringify(e));
-                 notify(confAccount + " withdraw " + money + " OK!");
+                 notify(confAccount + " withdraw application sent!");
                  updateCredit();
                  updateStats();
              }).catch(function(e){
                  console.log("onApplyWithdraw failed -> " + JSON.stringify(e));
-                 notify(confAccount + " withdraw " + money + " failed!");
+                 notify(confAccount + " withdraw application failed!");
                  alert(confAccount + " failed to withdraw!");
              })
          }
@@ -301,7 +341,10 @@
          }         
          
          function onBet(matchid, concede, side){
-             console.log("onBet " + matchid + ", " + concede + ", " + side);
+             var gameid = matchid + concede + 5 + 1;
+             console.log("onSubmitBet - matchid:" + matchid + ", concede:" +
+                         concede + ", side:" + side + ", gameid:" + gameid +
+                         ", decode gameid:" + Eos.modules.format.decodeName(gameid, false));
              var lTeamEn = $("#id_match" + matchid + "_lTeam").attr("lTeamEn");
              var rTeamEn = $("#id_match" + matchid + "_rTeam").attr("rTeamEn");
              var lTeamCn = $("#id_match" + matchid + "_lTeam").attr("lTeamCn");
@@ -355,20 +398,21 @@
              var lTeamCn = $("#id_bet_modal").attr("a_lTeamCn");
              var rTeamEn = $("#id_bet_modal").attr("a_rTeamEn");
              var rTeamCn = $("#id_bet_modal").attr("a_rTeamCn");
-             var money = "" + parseFloat($("#id_bet_price").val()).toFixed(4) + " SYS";
+             var money = "" + parseFloat($("#id_bet_price").val()).toFixed(4) + " " + confCoreSymbol;
              if(clear == 'clear'){
-                 money = "0.0000 SYS";
+                 money = "0.0000 " + confCoreSymbol;
              }
              var gameid = parseInt(matchid) + parseInt(concede) + 5 + 1;
-             console.log("" + confServer + ", "
-                       + confAccount + ", "
-                       + confKey + ", "
-                       + gameid + ", "
-                       + money + ", "
-                       + side + ", "
-                       + lTeamEn + ", "
-                       + rTeamEn + ", "
-                       + concede);
+             console.log("onSubmitBet - server:" + confServer +
+                         ", account:" + confAccount +
+                         ", matchid:" + matchid +
+                         ", gameid:" + gameid +
+                         ", decode gameid:" + Eos.modules.format.decodeName(gameid, false) +
+                         ", money:" + money +
+                         ", side:"+ side +
+                         ", lTeamEn:" + lTeamEn +
+                         ", rTeamEn" + rTeamEn +
+                         ", concede" + concede);
 
              submitBet(confServer, confAccount, confKey, gameid, money, side, lTeamEn, rTeamEn,
                        concede).then(function(e){
@@ -379,11 +423,11 @@
                        }).catch(function(e){
                            console.log("submit failed -> " + JSON.stringify(e));
                            $('#id_bet_modal').modal('hide');
-                           alert("submit to EOS failed!");
+                           alert("submit bet to EOS failed!");
                        });
          }
          
-         function setupMyBet(matchid){
+         function setupMyBet(matchid, allowBet){
              loadUserBet(confServer, matchid, confAccount).then(function(reses){
                  $.each(reses, function(idx, res){
                      var idstr = null;
@@ -392,13 +436,19 @@
                      }else{
                          idstr = "#id_mine_concede_n"+ (5 - idx);
                      }
-                     $(idstr + " a:eq(0)").text("").unbind().click(()=>onBet(matchid, idx - 5, 1));
-                     $(idstr + " a:eq(1)").text("").unbind().click(()=>onBet(matchid, idx - 5, 0));
-                     $(idstr + " a:eq(2)").text("").unbind().click(()=>onBet(matchid, idx - 5, -1));
+                     if(allowBet){
+                         $(idstr + " a:eq(0)").text("").unbind().click(()=>onBet(matchid, idx - 5, 1));
+                         $(idstr + " a:eq(1)").text("").unbind().click(()=>onBet(matchid, idx - 5, 0));
+                         $(idstr + " a:eq(2)").text("").unbind().click(()=>onBet(matchid, idx - 5, -1));
+                     }else{
+                         $(idstr + " a:eq(0)").text("").unbind().click(()=>notify("game freezed, can not bet!"));
+                         $(idstr + " a:eq(1)").text("").unbind().click(()=>notify("game freezed, can not bet!"));
+                         $(idstr + " a:eq(2)").text("").unbind().click(()=>notify("game freezed, can not bet!"));
+                     }
                      if(res.rows.length == 0 || res.rows[0].account != confAccount || res.rows[0].gameid != matchid + idx + 1){
                          $(idstr + " a").text("");
                      }else{
-                         var valStr = res.rows[0].money.replace(/ SYS/, "");
+                         var valStr = mytrim(res.rows[0].money);
                          if(res.rows[0].side > 0){
                              $(idstr + " a:eq(0)").text(valStr);
                          }else if(res.rows[0].side == 0){
@@ -424,8 +474,7 @@
              $("#id_name_code").text("Name Code : " + Eos.modules.format.encodeName(confAccount, false));
              
              getCredit(confServer, confAccount).then(function(res){
-                 console.log("updateCredit OK -> ", JSON.stringify(res));
-                 console.log(res.rows[0].account, confAccount);
+                 //console.log("updateCredit OK -> ", JSON.stringify(res));
                  $('#id_current_account').html("<strong>"+confAccount+"</strong>");
                  if(res.rows[0].account == confAccount){                     
                      $('#id_credit').attr("creditval", res.rows[0].money);
@@ -436,26 +485,27 @@
                      console.log("updateCredit got wrong account " + res.rows[0].account + ", need : " + confAccount);
                      $('#id_credit').attr("creditval", res.rows[0].money);
                      $('#id_credit').attr("freezedval", res.rows[0].freezed);
-                     $('#id_credit_using').text("-.---- SYS");
-                     $('#id_credit_freezed').text("-.---- SYS");                     
+                     $('#id_credit_using').text("-.---- " + confCoreSymbol);
+                     $('#id_credit_freezed').text("-.---- " + confCoreSymbol);                     
                      alert("query credit for " + confAccount + " failed!");
                  }
              }).catch(function(res){
                  console.log("updateCredit failed -> ", JSON.stringify(res));
-                 $('#id_credit').attr("creditval", res.rows[0].money);
-                 $('#id_credit').attr("freezedval", res.rows[0].freezed);
-                 $('#id_credit_using').text("-.---- SYS");
-                 $('#id_credit_freezed').text("-.---- SYS");
+                 $('#id_credit').attr("creditval", 0);
+                 $('#id_credit').attr("freezedval", 0);
+                 $('#id_credit_using').text("-.---- " + confCoreSymbol);
+                 $('#id_credit_freezed').text("-.---- " + confCoreSymbol);
                  alert("query credit for " + confAccount + " failed!");
              });
          }
 
          function updateStats(){
              getGameStat(confServer).then(function(e){
-                 console.log("getGameStat OK");
+                 //console.log("getGameStat OK");
                  var stat = e.rows[0];
                  $('#id_stat_incoming').text(stat.stat_incoming);
                  $('#id_stat_outcoming').text(stat.stat_outcoming);
+                 $('#id_stat_holding').text(stat.stat_holding);
                  $('#id_stat_profit').text(stat.stat_profit);
                  $('#id_stat_credit').text(stat.stat_credit);
                  $('#id_stat_bet').text(stat.stat_bet);
@@ -470,10 +520,15 @@
              confServer = localStorage.getItem("server");
              confAccount = localStorage.getItem("account");
              confKey = localStorage.getItem("active_key");
+             SOCCER_ACCOUNT = localStorage.getItem("contract_owner");
+             confCoreSymbol = localStorage.getItem("core_symbol");
              $("#id_server").val(confServer);
              $("#id_account").val(confAccount);
              $("#id_active_key").val(confKey);
-             console.log("confAccount is : ", confAccount);
+             $("#id_contract_owner").val(SOCCER_ACCOUNT);
+             $("#id_core_symbol").val(confCoreSymbol);
+
+             $("#id_bet_price").trigger("input");
              
              loadMatches(confServer).then(function(e){
                  notify("Connect to server ok!");
@@ -506,9 +561,10 @@
                         <div class="dropdown-divider"></div>
                         <div class="row">
                             <div class="col-6">
-                                <input id="id_bet_price" type="range" min="0.01" max="0.1" value="0.01" step="0.001" class="slider" id="myRange" oninput="$('#id_bet_price_label').text('BET ' + $('#id_bet_price').val() + ' SYS')">
+                                <input id="id_bet_price" type="range" min="0.01" max="0.1" value="0.01" step="0.001" class="slider" id="myRange"
+                                       oninput="$('#id_bet_price_label').text('BET ' + $('#id_bet_price').val() + ' ' + confCoreSymbol)">
                             </div>
-                            <div class="col-4"><strong id="id_bet_price_label" >BET 0.01 SYS</strong></div>
+                            <div class="col-4"><strong id="id_bet_price_label" ></strong></div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -537,24 +593,23 @@
                     <strong>----</strong>
                 </button>
                 <div class="dropdown-menu bg-dark">                    
-                    <a class="text-light dropdown-item" href="#" onclick="onDeposit('1.0000 SYS');">Deposit 1 EOS</a>
-                    <a class="text-light dropdown-item" href="#" onclick="onDeposit('10.0000 SYS');">Deposit 10 EOS</a>
+                    <a class="text-light dropdown-item" href="#" onclick="onDeposit('1.0000 ' + confCoreSymbol);">Deposit 1 EOS/SYS</a>
                     <a class="text-light dropdown-item" href="#" onclick="onApplyWithdraw();">Apply withdraw</a>
                     <a class="text-light dropdown-item" href="#" onclick="onCancelWithdraw();">Cancel withdraw</a>
                 </div>
             </div>
             
-            <span id="id_credit" class="text-light" creditval="0.0000 SYS" freezedval="0.0000 SYS">
+            <span id="id_credit" class="text-light">
                 <strong>Credit</strong>
                 <span style="width:5px"></span>
-                <span id="id_credit_using">-.---- SYS</span>
+                <span id="id_credit_using">-.---- ***</span>
                 <span style="width:10px"></span>
                 <strong>Freezed</strong>
                 <span style="width:5px"></span>
-                <span id="id_credit_freezed">-.----SYS</span>
+                <span id="id_credit_freezed">-.---- ***</span>
             </span>
             <span style="width:3rem"></span>
-            <a class="navbar-brand" href="#"><img src="images/FIFAWorldCup.png" style="height:3rem;width:3rem"></img>FIFA2018</a>
+            <a class="navbar-brand text-light" href="#"><strong>FIFA2018</strong><img src="images/FIFAWorldCup.png" style="height:3rem;width:3rem"></img><sub>by gpmn</sub></a>
         </nav>
         
         <div id="id_account_page" class="hcenter" style="width:40rem;margin-top:2rem">
@@ -573,12 +628,28 @@
 
                     <div class="input-group mb-3">
                         <div class="input-group-prepend">
+                            <span class="input-group-text">Contract</span>
+                        </div>
+                        <input class="form-control" id="id_contract_owner" aria-describedby="basic-addon3" type="text"
+                               placeholder="contract, default should be 'soccer'">
+                    </div>
+
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">EOS Symbol</span>
+                        </div>
+                        <input class="form-control" id="id_core_symbol" aria-describedby="basic-addon3" type="text"
+                               placeholder="EOS symbol, should be 'EOS' or 'SYS'">
+                    </div>                    
+
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
                             <span class="input-group-text">Account</span>
                         </div>
                         <input class="form-control" id="id_account" aria-describedby="basic-addon3" type="text"
                                placeholder="account" onchange="updateCredit()">
                         <div class="input-group-append">
-                            <span id="id_name_code" style="width:18rem" class="input-group-text"></span>
+                            <span id="id_name_code" style="width:20rem" class="input-group-text"></span>
                         </div>
                     </div>
 
@@ -601,11 +672,12 @@
             </div>
             <div class="card">
                 <div class="card-header text-center">
-                    <H3>Game statistics</H3>   
+                    <H3>Admin' Account statistics</H3>   
                 </div>
                 <div class="card-body" style="">
                     <div class="row"><span class="col-3"></span><strong class="col-3">Incoming</strong><span id="id_stat_incoming" class="col-3 text-success"></span><span class="col-3"></span></div>
                     <div class="row"><span class="col-3"></span><strong class="col-3">Outcoming</strong><span id="id_stat_outcoming" class="col-3 text-danger"></span><span class="col-3"></span></div>
+                    <div class="row"><span class="col-3"></span><strong class="col-3">Holding</strong><span id="id_stat_holding" class="col-3 text-success"></span><span class="col-3"></span></div>
                     <div class="row"><span class="col-3"></span><strong class="col-3">Profit</strong><span id="id_stat_profit" class="col-3"></span><span class="col-3"></span></div>
                     <div class="row"><span class="col-3"></span><strong class="col-3">Credit</strong><span id="id_stat_credit" class="col-3"></span><span class="col-3"></span></div>
                     <div class="row"><span class="col-3"></span><strong class="col-3">Bet</strong><span id="id_stat_bet" class="col-3"></span><span class="col-3"></span></div>
