@@ -2,6 +2,8 @@
 // be executed in the renderer process for that window.
 // All of the Node.js APIs are available in this process.
 
+var SOCCER_ACCOUNT = "soccer";
+
 var allTeams = new Map();
 allTeams.set("Argentina",   "阿根廷");
 allTeams.set("Australia",   "澳大利亚");
@@ -114,8 +116,8 @@ function loadMatches(eosAddr){
 
     var eos = Eos(options);
     return eos.getTableRows({
-        code:"soccer",
-        scope:"soccer",
+        code:SOCCER_ACCOUNT,
+        scope:SOCCER_ACCOUNT,
         table:"match",
         limit:256,
         json:true,
@@ -133,8 +135,8 @@ function loadGames(eosAddr, matchid){
 
     var eos = Eos(options);
     return eos.getTableRows({
-        code:"soccer",
-        scope:"soccer",
+        code:SOCCER_ACCOUNT,
+        scope:SOCCER_ACCOUNT,
         table:"game",
         limit:20,
         lower_bound:(matchid+1).toString(),
@@ -156,7 +158,7 @@ function loadUserBet(eosAddr, matchid, account){
     for(var index = 1; index <= 11; index ++){
         var gameid = matchid + index;
         var pm = eos.getTableRows({
-            code: "soccer",
+            code: SOCCER_ACCOUNT,
             scope: Eos.modules.format.decodeName(gameid, false),
             table: "betinfo",
             limit: 1,
@@ -179,13 +181,13 @@ function getCredit(eosAddr, account){
 
     var eos = Eos(options);
     return eos.getTableRows({
-        code:"soccer",
-        scope:"soccer",
+        code:SOCCER_ACCOUNT,
+        scope:SOCCER_ACCOUNT,
         table:"credit",
         lower_bound:Eos.modules.format.encodeName(account, false),
         limit:1,
         json:true
-    });    
+    });
 }
 
 function submitBet(eosAddr, account, activeKey, gameid, money, side, lTeam, rTeam, concede){
@@ -202,11 +204,11 @@ function submitBet(eosAddr, account, activeKey, gameid, money, side, lTeam, rTea
     return eos.transaction({
         actions: [
             {
-                account: 'soccer',
-                name: 'bet',
+                account: SOCCER_ACCOUNT,
+                name: "bet",
                 authorization: [{
                     actor: account,
-                    permission: 'active'
+                    permission: "active"
                 }],
                 data: {
                     account: account,
@@ -237,15 +239,15 @@ function deposit(eosAddr, account, activeKey, money){
     return eos.transaction({
         actions: [
             {
-                account: 'eosio.token',
-                name: 'transfer',
+                account: "eosio.token",
+                name: "transfer",
                 authorization: [{
                     actor: account,
-                    permission: 'active'
+                    permission: "active"
                 }],
                 data: {
                     from: account,
-                    to: "soccer",
+                    to: SOCCER_ACCOUNT,
                     quantity: money,
                     memo:"deposit to socelec."
                 }
@@ -254,31 +256,78 @@ function deposit(eosAddr, account, activeKey, money){
     })
 }
 
-/* function withdraw(eosAddr, account, activeKey, money){
- *     var options = {
- *         httpEndpoint   : eosAddr,
- *         keyProvider    : activeKey,
- *         expireInSeconds: 60,
- *         broadcast      : true,
- *         debug          : false,        
- *         sign           : true
- *     };
- *     
- *     var eos = Eos(options);
- *     return eos.transaction({
- *         actions: [
- *             {
- *                 account: "soccer",
- *                 name: "withdraw",
- *                 authorization: [{
- *                     actor: account,
- *                     permission: 'active'
- *                 }],
- *                 data: {
- *                     account: account,
- *                     quantity: money,
- *                 }
- *             }
- *         ]
- *     })
- * } */
+function applyWithdraw(eosAddr, account, activeKey, money){
+    var options = {
+        httpEndpoint   : eosAddr,
+        keyProvider    : activeKey,
+        expireInSeconds: 60,
+        broadcast      : true,
+        debug          : false,        
+        sign           : true
+    };
+    
+    var eos = Eos(options);
+    return eos.transaction({
+        actions: [
+            {
+                account: SOCCER_ACCOUNT,
+                name: "withdraw",
+                authorization: [{
+                    actor: account,
+                    permission: "active"
+                }],
+                data: {
+                    account: account,
+                    quantity: money,
+                }
+            }
+        ]
+    })
+}
+
+function cancelWithdraw(eosAddr, account, activeKey){
+    var options = {
+        httpEndpoint   : eosAddr,
+        keyProvider    : activeKey,
+        expireInSeconds: 60,
+        broadcast      : true,
+        debug          : false,        
+        sign           : true
+    };
+    
+    var eos = Eos(options);
+    return eos.transaction({
+        actions: [
+            {
+                account: SOCCER_ACCOUNT,
+                name: "cancelwd",
+                authorization: [{
+                    actor: account,
+                    permission: "active"
+                }],
+                data: {
+                    account: account,
+                }
+            }
+        ]
+    })
+}
+
+function getGameStat(eosAddr){
+    var options = {
+        httpEndpoint   : eosAddr,
+        expireInSeconds: 60,
+        broadcast      : true,
+        debug          : false,
+        sign           : false
+    };
+
+    var eos = Eos(options);
+    return eos.getTableRows({
+        code:SOCCER_ACCOUNT,
+        scope:SOCCER_ACCOUNT,
+        table:"socctrl",
+        limit:1,
+        json:true
+    });    
+}
