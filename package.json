@@ -9,7 +9,6 @@
     "author": "gpmn",
     "license": "GPL3.0",
     "dependencies": {
-        "electron": "^2.0.0"
     },
     "win": {
         "icon": "images/FIFAWorldCup.ico"
