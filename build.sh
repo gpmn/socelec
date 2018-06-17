@@ -1,4 +1,5 @@
-npm init
+#!/bin/bash
+# 'npm install electron-packager' first
 npm install electron
-npm install electron-builder
+electron-packager .
 

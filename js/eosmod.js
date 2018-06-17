@@ -2,7 +2,7 @@
 // be executed in the renderer process for that window.
 // All of the Node.js APIs are available in this process.
 
-var SOCCER_ACCOUNT = "soccer";
+var SOCCER_ACCOUNT = "fifagambling";
 
 var allTeams = new Map();
 allTeams.set("Argentina",   "阿根廷");
@@ -10,7 +10,7 @@ allTeams.set("Australia",   "澳大利亚");
 allTeams.set("Belgium",     "比利时");
 allTeams.set("Brazil",      "巴西");
 allTeams.set("Colombia",    "哥伦比亚");
-allTeams.set("CostaRica",   "澳大利亚");
+allTeams.set("CostaRica",   "哥斯达黎加");
 allTeams.set("Croatia",     "克罗地亚");
 allTeams.set("Denmark",     "丹麦");
 allTeams.set("Egypt",       "埃及");
@@ -82,7 +82,7 @@ allTeams.set("Uruguay",     "乌拉圭");
  *     {id:41, tm:"2018-06-27T22:00+08:00", desc:"FIFA2018 F group",      lteam:"Mexico",         rteam:"Sweden"},
  *     {id:42, tm:"2018-06-27T22:00+08:00", desc:"FIFA2018 F group",      lteam:"Korea",          rteam:"Germany"},
  *     {id:43, tm:"2018-06-28T02:00+08:00", desc:"FIFA2018 E group",      lteam:"Serbia",         rteam:"Brazil"},
- *     {id:44, tm:"2018-06-28T02:00+08:00", desc:"FIFA2018 E group",      lteam:" Switzerland",   rteam:"CostaRica"},
+ *     {id:44, tm:"2018-06-28T02:00+08:00", desc:"FIFA2018 E group",      lteam:"Switzerland",   rteam:"CostaRica"},
  *     {id:45, tm:"2018-06-28T22:00+08:00", desc:"FIFA2018 H group",      lteam:"Japan",          rteam:"Poland"},
  *     {id:46, tm:"2018-06-28T22:00+08:00", desc:"FIFA2018 H group",      lteam:"Senegal",        rteam:"Colombia"},
  *     {id:47, tm:"2018-06-29T02:00+08:00", desc:"FIFA2018 G group",      lteam:"Panama",         rteam:"Tunisia"},

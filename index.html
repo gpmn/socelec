@@ -95,7 +95,7 @@
              $(notify).prependTo('body').show().delay(3000).fadeOut();
          }
 
-         var confServer, confAccount, confKey, confCoreSymbol;
+         var confServer, confAccount, confKey, confCoreSymbol="EOS";
          var allEosMatches = null;
 
          function onPage(page){
@@ -123,23 +123,12 @@
                  alert("Activ key invalid!");
                  return
              }
-             SOCCER_ACCOUNT = $("#id_contract_owner").val();
-             if(SOCCER_ACCOUNT == ""){
-                 alert("contract owner invalid");
-                 return;
-             }
-             confCoreSymbol = $("#id_core_symbol").val();
-             if(confCoreSymbol != "EOS" && confCoreSymbol != "SYS"){
-                 alert("EOS symbol invalid!");
-                 return;
-             }
+
              loadMatches(confServer).then(function(e){
                  notify("Connect to server ok, and your configuration is saved!");
                  localStorage.setItem("server", confServer);
                  localStorage.setItem("account", confAccount);
                  localStorage.setItem("active_key", confKey);
-                 localStorage.setItem("contract_owner", SOCCER_ACCOUNT);
-                 localStorage.setItem("core_symbol", confCoreSymbol);
                  
                  allEosMatches = e.rows;
                  buildMatchList();
@@ -176,8 +165,6 @@
                              '</div>');
 
                  item.find("#id_match" + match.matchid + "_row").attr("matchid",match.matchid);
-                 item.find("#id_match" + match.matchid + "_lTeam").html(lTeam).attr("lTeamEn",match.lTeam);
-                 item.find("#id_match" + match.matchid + "_rTeam").html(rTeam).attr("rTeamEn",match.rTeam);
                  var lTeam = allTeams.get(match.lTeam);
                  var rTeam = allTeams.get(match.rTeam);
                  var lSrc = "./teams/"+match.lTeam+".png";
@@ -185,23 +172,30 @@
                  var lWidth = "40px";
                  var rWidth = "40px";
                  if(lTeam == undefined){
+                     //console.log("lTeam undefined for " + match.lTeam);
                      lTeam = match.lTeam;
                      lSrc = "./images/football.png";
                      lWidth = "25px";
                      item.find("#id_match" + match.matchid + "_lTeam").html(lTeam).attr("lTeamCn",match.lTeam);
                  }else{
+                     //console.log("lTeam -> " + match.lTeam + lTeam);
                      item.find("#id_match" + match.matchid + "_lTeam").html(lTeam).attr("lTeamCn",lTeam);
                      lTeam = match.lTeam + "<br/>" + lTeam;
                  }
                  if(rTeam == undefined){
+                     //console.log("rTeam undefined for " + match.rTeam);
                      rTeam = match.rTeam;
                      rSrc = "./images/football.png";
                      rWidth = "25px";
                      item.find("#id_match" + match.matchid + "_rTeam").html(rTeam).attr("rTeamCn",match.rTeam);
                  }else{
+                     //console.log("rTeam -> " + match.rTeam + rTeam);
                      item.find("#id_match" + match.matchid + "_rTeam").html(rTeam).attr("rTeamCn",rTeam);
                      rTeam = match.rTeam + "<br/>" + rTeam;                     
                  }
+                 item.find("#id_match" + match.matchid + "_lTeam").html(lTeam).attr("lTeamEn",match.lTeam);
+                 item.find("#id_match" + match.matchid + "_rTeam").html(rTeam).attr("rTeamEn",match.rTeam);
+
                  
                  item.find("#id_match" + match.matchid + "_lTeam_img").attr("src", lSrc).css("width",lWidth);
                  item.find("#id_match" + match.matchid + "_rTeam_img").attr("src", rSrc).css("width",rWidth);
@@ -236,17 +230,21 @@
                      item.find("#id_match" + match.matchid + "_disabled").text("bet freezed");
                  }
 
-                 item.children("*").unbind().click(function(){
-                     setupOverview(match.matchid);
-                     setupMyBet(match.matchid, allowBet);
-                     updateCredit();
-                     updateStats();
-                     $("#id_bet_overview_title div:eq(0) h4").html(lTeam);
-                     $("#id_bet_overview_title div:eq(3) h4").html(rTeam);
-                     $("#id_bet_overview_title div:eq(1) img").attr("src",lSrc).css("width", lWidth);
-                     $("#id_bet_overview_title div:eq(2) img").attr("src",rSrc).css("width", rWidth);
-                     $("#id_mybet_title").text("Bet of "+ confAccount);
-                 });
+                 item.children("*").unbind().click(function(mid, allow, lt, rt, ls, rs, lw, rw){
+                     return function(){
+                         setupOverview(mid);
+                         setupMyBet(mid, allow);
+                         updateCredit();
+                         updateStats();
+                         console.log("lt -> " + lt);
+                         console.log("rt -> " + rt);
+                         $("#id_bet_overview_title div:eq(0) h4").html(lt);
+                         $("#id_bet_overview_title div:eq(3) h4").html(rt);
+                         $("#id_bet_overview_title div:eq(1) img").attr("src",ls).css("width", lw);
+                         $("#id_bet_overview_title div:eq(2) img").attr("src",rs).css("width", rw);
+                         $("#id_mybet_title").text("Bet of "+ confAccount);
+                     }
+                 }(match.matchid, allowBet, lTeam, rTeam, lSrc, rSrc, lWidth, rWidth));
                  
                  matchList.append(item);
              });
@@ -511,7 +509,7 @@
                  $('#id_stat_bet').text(stat.stat_bet);
              }).catch(function(e){
                  console.log("getGameStat failed");
-                 alert("query admin's balance failed");
+                 alert("query game owner's balance failed");
              });
          }
 
@@ -520,13 +518,10 @@
              confServer = localStorage.getItem("server");
              confAccount = localStorage.getItem("account");
              confKey = localStorage.getItem("active_key");
-             SOCCER_ACCOUNT = localStorage.getItem("contract_owner");
-             confCoreSymbol = localStorage.getItem("core_symbol");
+             
              $("#id_server").val(confServer);
              $("#id_account").val(confAccount);
              $("#id_active_key").val(confKey);
-             $("#id_contract_owner").val(SOCCER_ACCOUNT);
-             $("#id_core_symbol").val(confCoreSymbol);
 
              $("#id_bet_price").trigger("input");
              
@@ -561,7 +556,7 @@
                         <div class="dropdown-divider"></div>
                         <div class="row">
                             <div class="col-6">
-                                <input id="id_bet_price" type="range" min="0.01" max="0.1" value="0.01" step="0.001" class="slider" id="myRange"
+                                <input id="id_bet_price" type="range" min="0.1" max="1" value="0.1" step="0.01" class="slider" id="myRange"
                                        oninput="$('#id_bet_price_label').text('BET ' + $('#id_bet_price').val() + ' ' + confCoreSymbol)">
                             </div>
                             <div class="col-4"><strong id="id_bet_price_label" ></strong></div>
@@ -588,7 +583,7 @@
                 </ul>
             </div>
             
-            <div class="btn-group" style="width:6rem">
+            <div class="btn-group">
                 <button id="id_current_account" type="button" class="btn btn-dark dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <strong>----</strong>
                 </button>
@@ -609,12 +604,12 @@
                 <span id="id_credit_freezed">-.---- ***</span>
             </span>
             <span style="width:3rem"></span>
-            <a class="navbar-brand text-light" href="#"><strong>FIFA2018</strong><img src="images/FIFAWorldCup.png" style="height:3rem;width:3rem"></img><sub>by gpmn</sub></a>
+            <a class="navbar-brand text-light" href="#"><strong>FIFA2018</strong><img src="images/FIFAWorldCup.png" style="height:3rem;width:3rem"></img><sub>gpmn 06170230pm v1.0</sub></a>
         </nav>
         
-        <div id="id_account_page" class="hcenter" style="width:40rem;margin-top:2rem">
+        <div id="id_account_page" class="hcenter" style="width:40rem">
             <div class="card">
-                <div class="card-header text-center">
+                <div class="card-header text-center bg-dark text-light">
                     <H3>Configure</H3>
                 </div>
                 
@@ -625,22 +620,6 @@
                         </div>
                         <input class="form-control" id="id_server" aria-describedby="basic-addon3" type="url">
                     </div>
-
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Contract</span>
-                        </div>
-                        <input class="form-control" id="id_contract_owner" aria-describedby="basic-addon3" type="text"
-                               placeholder="contract, default should be 'soccer'">
-                    </div>
-
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">EOS Symbol</span>
-                        </div>
-                        <input class="form-control" id="id_core_symbol" aria-describedby="basic-addon3" type="text"
-                               placeholder="EOS symbol, should be 'EOS' or 'SYS'">
-                    </div>                    
 
                     <div class="input-group mb-3">
                         <div class="input-group-prepend">
@@ -671,8 +650,8 @@
                 </div>
             </div>
             <div class="card">
-                <div class="card-header text-center">
-                    <H3>Admin' Account statistics</H3>   
+                <div class="card-header text-center bg-dark text-light">
+                    <H3>Game Admin's statistics</H3>   
                 </div>
                 <div class="card-body" style="">
                     <div class="row"><span class="col-3"></span><strong class="col-3">Incoming</strong><span id="id_stat_incoming" class="col-3 text-success"></span><span class="col-3"></span></div>
