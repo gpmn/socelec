@@ -618,35 +618,44 @@
                         <div class="input-group-prepend">
                             <span class="input-group-text">Server addr</span>
                         </div>
-                        <input class="form-control" id="id_server" aria-describedby="basic-addon3" type="url">
-                    </div>
-
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Account</span>
-                        </div>
-                        <input class="form-control" id="id_account" aria-describedby="basic-addon3" type="text"
-                               placeholder="account" onchange="updateCredit()">
+                        <input class="form-control" id="id_server" aria-describedby="basic-addon3" type="url" val="http://mainnet.eoscalgary.io">
                         <div class="input-group-append">
-                            <span id="id_name_code" style="width:20rem" class="input-group-text"></span>
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Servers</button>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="#" onclick='$("#id_server").val($(this).text())'>http://mainnet.eoscalgary.io</a>
+                                <a class="dropdown-item" href="#" onclick='$("#id_server").val($(this).text())'>http://mainnet.eoscanada.com</a>
+                                <a class="dropdown-item" href="#" onclick='$("#id_server").val($(this).text())'>http://mainnet.eoscannon.io</a>
+                                <a class="dropdown-item" href="#" onclick='$("#id_server").val($(this).text())'>http://mainnet.genereos.io</a>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Active key</span>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">Account</span>
+                            </div>
+                            <input class="form-control" id="id_account" aria-describedby="basic-addon3" type="text"
+                                   placeholder="account" onchange="updateCredit()">
+                            <div class="input-group-append">
+                                <span id="id_name_code" style="width:20rem" class="input-group-text"></span>
+                            </div>
                         </div>
-                        <input class="form-control" id="id_active_key" aria-describedby="basic-addon3" type="password" placeholder="active key of account">
-                    </div>
-                    <div class="input-group mb-3">
-                        <span>First, we strongly recommend to <span class="text-danger">create a dummy acount</span> to play this game!</span>
-                        <span>Second, active key is enough, <span class="text-danger">don't input your owner key!</span></span>
-                    </div>
-                    
-                    <div class="input-group mb-3">
-                        <a href="#" class="btn btn-primary hcenter" onclick="onSave()">Save</a>
-                    </div>
-                    
+
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">Active key</span>
+                            </div>
+                            <input class="form-control" id="id_active_key" aria-describedby="basic-addon3" type="password" placeholder="active key of account">
+                        </div>
+                        <div class="input-group mb-3">
+                            <span>First, we strongly recommend to <span class="text-danger">create a dummy acount</span> to play this game!</span>
+                            <span>Second, active key is enough, <span class="text-danger">don't input your owner key!</span></span>
+                        </div>
+                        
+                        <div class="input-group mb-3">
+                            <a href="#" class="btn btn-primary hcenter" onclick="onSave()">Save</a>
+                        </div>
+                        
                 </div>
             </div>
             <div class="card">
