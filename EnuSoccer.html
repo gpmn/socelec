@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>FIFA 2018</title>
+        
+        <link rel="stylesheet" type="text/css" href="/public/css/bootstrap.min.css">
+        <style>
+         .gridbd{
+             border-style:solid;
+             border-width:1px;
+             border-color:#dddddd
+         }         
+         /* The slider itself */
+         .slider {
+             -webkit-appearance: none;  /* Override default CSS styles */
+             appearance: none;
+             width: 100%; /* Full-width */
+             height: 25px; /* Specified height */
+             background: #d3d3d3; /* Grey background */
+             outline: none; /* Remove outline */
+             opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+             -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+             transition: opacity .2s;
+         }
+
+         /* Mouse-over effects */
+         .slider:hover {
+             opacity: 1; /* Fully shown on mouse-over */
+         }
+
+         /* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */ 
+         .slider::-webkit-slider-thumb {
+             -webkit-appearance: none; /* Override default look */
+             appearance: none;
+             width: 25px; /* Set a specific slider handle width */
+             height: 25px; /* Slider handle height */
+             background: url('/img/football.ico');
+             background-repeat:no-repeat;
+             background-size:cover;
+             cursor: pointer; /* Cursor on hover */
+         }
+
+         .slider::-moz-range-thumb {
+             width: 25px; /* Set a specific slider handle width */
+             height: 25px; /* Slider handle height */
+             background: url('/img/football.ico');
+             background-repeat:no-repeat;
+             background-size:cover;
+             cursor: pointer; /* Cursor on hover */
+         }
+         
+         .input-group-text{
+             width:7rem;
+         }
+         .hcenter{
+             margin-right:auto;margin-left:auto;
+         }
+         .vcenter{
+             margin-top:auto;margin-bottom:auto;
+         }
+
+         .enlight :hover{
+             background:#cccccc
+         }
+
+         .alertmsg{
+             position:fixed;
+             margin-top:20%;
+             margin-left:20%;
+             margin-right:20%;
+             width:60%;
+             z-index:999;
+         }
+         .notifymsg{
+             position:fixed;
+             margin-top:20%;
+             margin-left:20%;
+             margin-right:20%;
+             width:60%;
+             z-index:999;
+         }         
+        </style>
+
+        <script src="/public/js/enu.js"></script>
+        <script src="/public/js/enumod.js"></script>
+        <script src="/public/js/jquery-3.3.1.min.js"></script>
+        <script src="/public/js/popper.min.js"></script>
+        <script src="/public/js/bootstrap.bundle.min.js"></script>
+        
+        <script>
+         function alert(msg){
+             $(".alert").remove();
+             var alert = '<div class="alert bg-danger text-light alertmsg" role="alert"><h5>' + msg + '</h5></div>';
+             $(alert).prependTo('body').show().delay(3000).fadeOut();
+         }
+         function notify(msg){
+             $(".alert").remove();
+             var notify = '<div class="alert bg-success text-light notifymsg" role="alert"><h5>' + msg + '</h5></div>';
+             $(notify).prependTo('body').show().delay(3000).fadeOut();
+         }
+
+         var confServer, confAccount, confKey, confCoreSymbol="ENU";
+         var allEnuMatches = null;
+
+         function onPage(page){
+             $("#id_account_page").hide();
+             $("#id_bet_page").hide();
+             $("#id_help_page").hide();
+             $("#id_bet_link").removeClass("active");
+             $("#id_account_link").removeClass("active");
+             $("#id_help_link").removeClass("active");
+             $("#id_" + page + "_page").show();
+             $("#id_" + page + "_link").addClass("active");
+         }
+
+         function onSave(){
+             confServer = $("#id_server").val();
+             if(confServer == ""){
+                 alert("Server invalid!");
+                 return
+             }
+             confAccount = $("#id_account").val();
+             if(confAccount == ""){
+                 alert("Account invalid!");
+                 return
+             }
+             confKey = $("#id_active_key").val();
+             if(confAccount == ""){
+                 alert("Activ key invalid!");
+                 return
+             }
+
+             loadMatches(confServer).then(function(e){
+                 notify("Connect to server ok, and your configuration is saved!");
+                 localStorage.setItem("server", confServer);
+                 localStorage.setItem("account", confAccount);
+                 localStorage.setItem("active_key", confKey);
+                 
+                 allEnuMatches = e.rows;
+                 buildMatchList();
+                 updateCredit();
+                 updateStats();
+             }).catch(function(e){
+                 alert("Can not access server, check your configuration please!");
+                 console.log("->" + e);
+             });
+         }
+
+         function buildMatchList(){
+             var matchList = $('#id_match_list');
+             matchList.empty();
+             $.each(allEnuMatches, function(index, match){
+                 var item =$('<div id="id_match'+match.matchid+'_row" class="row">' +/* id_matchxx_row */
+                             '<div class="col-6">' +
+                             '<div class="row text-center"><span class="text-center vcenter hcenter col-6" id="id_match' + match.matchid + '_date"></span><strong class="col-6 text-danger text-right" id="id_match' + match.matchid + '_disabled"></strong></div>' +/* id_matchxx_date */
+                             '<div class="row text-center"><strong class="text-center vcenter hcenter" id="id_match' + match.matchid + '_desc"></strong></div>' +/* id_matchxx_desc */
+                             '<div class="row">' +
+                             '<h2 id="id_match'+match.matchid+'_score" class="text-center vcenter hcenter"></h2>' +/* id_matchxx_score */
+                             '</div>' +
+                             '</div>' +
+                             '<div class="container col-6">' +
+                             '<div class="row">' +
+                             '<div class="col-6"><h6 id="id_match' + match.matchid +'_lTeam"></h6></div>' +/* id_matchxx_lTeam */
+                             '<div class="col-6"><h6 id="id_match' + match.matchid +'_rTeam"></h6></div>' +/* id_matchxx_rTeam */
+                             '</div>' +
+                             '<div class="row">' +
+                             '<div class="col-6"><img id="id_match' + match.matchid + '_lTeam_img" style="width:40px;height:25px" src=""></div>' +/* id_matchxx_lTeam_img */
+                             '<div class="col-6"><img id="id_match' + match.matchid + '_rTeam_img" style="width:40px;height:25px" src=""></div>' +/* id_matchxx_rTeam_img */
+                             '</div>' +
+                             '</div>' +
+                             '</div>');
+
+                 item.find("#id_match" + match.matchid + "_row").attr("matchid",match.matchid);
+                 var lTeam = allTeams.get(match.lTeam);
+                 var rTeam = allTeams.get(match.rTeam);
+                 var lSrc = "/teams/"+match.lTeam+".png";
+                 var rSrc = "/teams/"+match.rTeam+".png";
+                 var lWidth = "40px";
+                 var rWidth = "40px";
+                 if(lTeam == undefined){
+                     //console.log("lTeam undefined for " + match.lTeam);
+                     lTeam = match.lTeam;
+                     lSrc = "/img/football.png";
+                     lWidth = "25px";
+                     item.find("#id_match" + match.matchid + "_lTeam").html(lTeam).attr("lTeamCn",match.lTeam);
+                 }else{
+                     //console.log("lTeam -> " + match.lTeam + lTeam);
+                     item.find("#id_match" + match.matchid + "_lTeam").html(lTeam).attr("lTeamCn",lTeam);
+                     lTeam = match.lTeam + "<br/>" + lTeam;
+                 }
+                 if(rTeam == undefined){
+                     //console.log("rTeam undefined for " + match.rTeam);
+                     rTeam = match.rTeam;
+                     rSrc = "/img/football.png";
+                     rWidth = "25px";
+                     item.find("#id_match" + match.matchid + "_rTeam").html(rTeam).attr("rTeamCn",match.rTeam);
+                 }else{
+                     //console.log("rTeam -> " + match.rTeam + rTeam);
+                     item.find("#id_match" + match.matchid + "_rTeam").html(rTeam).attr("rTeamCn",rTeam);
+                     rTeam = match.rTeam + "<br/>" + rTeam;                     
+                 }
+                 item.find("#id_match" + match.matchid + "_lTeam").html(lTeam).attr("lTeamEn",match.lTeam);
+                 item.find("#id_match" + match.matchid + "_rTeam").html(rTeam).attr("rTeamEn",match.rTeam);
+
+                 
+                 item.find("#id_match" + match.matchid + "_lTeam_img").attr("src", lSrc).css("width",lWidth);
+                 item.find("#id_match" + match.matchid + "_rTeam_img").attr("src", rSrc).css("width",rWidth);
+
+                 var tm = new Date();
+                 tm.setTime(match.tmBegin * 1000);
+                 var minStr = tm.getMinutes();
+                 if(minStr == "0"){
+                     minStr = "00";
+                 }
+                 var tmStr = "" + tm.getFullYear() + "-" + (1 + tm.getMonth()) + "-" + tm.getDate() + " " + tm.getHours() + ":" + minStr;
+                 item.find("#id_match" + match.matchid + "_date").text(tmStr);
+                 item.find("#id_match" + match.matchid + "_desc").text(match.desc);
+                 if(match.lScore >= 0 && match.rScore >= 0){
+                     item.find("#id_match" + match.matchid + "_score").text("" + match.lScore + " : " + match.rScore);
+                 }else{
+                     item.find("#id_match" + match.matchid + "_score").text("-- : --");
+                 }
+                 var allowBet = true;
+                 var tmNow = new Date();
+                 //console.log("" + match.lTeam + ":" + match.rTeam + " - " + match.matchid + " tmBegin : " + match.tmBegin + ", now:" + (tmNow.getTime()/1000));
+                 if(match.status == 1 && match.tmBegin >= tmNow.getTime()/1000 + 60 * 10){/* not freezed and 10 mins before game */
+                     if(index % 2 == 0){
+                         item.css("background-color","#f8ffff");
+                     }else{
+                         item.css("background-color","#fffff8");
+                     }
+                     item.addClass("enlight");
+                 }else{
+                     allowBet = false;
+                     item.css("background-color","#dddddd");
+                     item.find("#id_match" + match.matchid + "_disabled").text("bet freezed");
+                 }
+
+                 item.children("*").unbind().click(function(mid, allow, lt, rt, ls, rs, lw, rw){
+                     return function(){
+                         setupOverview(mid);
+                         setupMyBet(mid, allow);
+                         updateCredit();
+                         updateStats();
+                         console.log("lt -> " + lt);
+                         console.log("rt -> " + rt);
+                         $("#id_bet_overview_title div:eq(0) h4").html(lt);
+                         $("#id_bet_overview_title div:eq(3) h4").html(rt);
+                         $("#id_bet_overview_title div:eq(1) img").attr("src",ls).css("width", lw);
+                         $("#id_bet_overview_title div:eq(2) img").attr("src",rs).css("width", rw);
+                         $("#id_mybet_title").text("Bet of "+ confAccount);
+                     }
+                 }(match.matchid, allowBet, lTeam, rTeam, lSrc, rSrc, lWidth, rWidth));
+                 
+                 matchList.append(item);
+             });
+         }
+
+         function mytrim(str){
+             if(confCoreSymbol == 'SYS'){
+                 return str.replace(/ SYS/, "");
+             }else if (confCoreSymbol == 'ENU'){
+                 return str.replace(/ ENU/, "");
+             }else{
+                 console.log("core symbol '" + confCoreSymbol + "' invalid");
+                 alert("core symbol '" + confCoreSymbol + "' invalid");
+                 return str;
+             }
+         }
+         
+         function setupOverview(matchid){
+             loadGames(confServer, matchid).then(function(e){
+                 $.each(e.rows, function(index, game){
+                     var idstr = null;
+                     if(game.concede >= 0){
+                         idstr = "#id_ov_concede_p" + game.concede;
+                     }else{
+                         idstr = "#id_ov_concede_n"+ (-game.concede);
+                     }
+                     $(idstr).attr("gameid", game.gameid).attr("matchid", matchid);
+                     var amountStr = mytrim(game.win);
+                     if(amountStr == "0.0000"){
+                         amountStr = "";
+                     }
+                     $(idstr + " div:eq(1)").text(amountStr);
+                     
+                     amountStr = mytrim(game.punch);
+                     if(amountStr == "0.0000"){
+                         amountStr = "";
+                     }
+                     $(idstr + " div:eq(2)").text(amountStr);
+                     
+                     amountStr = mytrim(game.lose);
+                     if(amountStr == "0.0000"){
+                         amountStr = "";
+                     }
+                     $(idstr + " div:eq(3)").text(amountStr);
+                     if(index % 2 == 0){
+                         $(idstr).css("background-color","#f8fff8");
+                     }else{
+                         $(idstr).css("background-color","#fff8f8");
+                     }                     
+                 });
+             }).catch(function(e){
+                 alert("load match from ENU failed!");
+             });
+         }
+
+         function onDeposit(money){
+             deposit(confServer, confAccount, confKey, money).then(function(e){
+                 notify(confAccount + " despoit " + money + " to soccer account OK!");
+                 updateCredit();
+                 updateStats();
+             }).catch(function(e){
+                 console.log("onDeposit failed -> " + JSON.stringify(e));
+                 alert(confAccount + " failed to despoit " + money + "!");
+             })
+         }
+
+         function onApplyWithdraw(){
+             var money = $('#id_credit').attr("creditval");
+             applyWithdraw(confServer, confAccount, confKey, money).then(function(e){
+                 console.log("onApplyWithdraw OK -> " + JSON.stringify(e));
+                 notify(confAccount + " withdraw application sent!");
+                 updateCredit();
+                 updateStats();
+             }).catch(function(e){
+                 console.log("onApplyWithdraw failed -> " + JSON.stringify(e));
+                 notify(confAccount + " withdraw application failed!");
+                 alert(confAccount + " failed to withdraw!");
+             })
+         }
+
+         function onCancelWithdraw(){
+             cancelWithdraw(confServer, confAccount, confKey).then(function(e){
+                 console.log("onCancelWithdraw OK -> " + JSON.stringify(e));
+                 notify(confAccount + " cancel withdraw OK!");
+                 updateCredit();
+                 updateStats();
+             }).catch(function(e){
+                 console.log("onCancelWithdraw failed -> " + JSON.stringify(e));
+                 notify(confAccount + " cancel withdraw  failed!");
+                 alert(confAccount + " failed to cancel withdraw!");
+             })
+         }         
+         
+         function onBet(matchid, concede, side){
+             var gameid = matchid + concede + 5 + 1;
+             console.log("onSubmitBet - matchid:" + matchid + ", concede:" +
+                         concede + ", side:" + side + ", gameid:" + gameid +
+                         ", decode gameid:" + Enu.modules.format.decodeName(gameid, false));
+             var lTeamEn = $("#id_match" + matchid + "_lTeam").attr("lTeamEn");
+             var rTeamEn = $("#id_match" + matchid + "_rTeam").attr("rTeamEn");
+             var lTeamCn = $("#id_match" + matchid + "_lTeam").attr("lTeamCn");
+             var rTeamCn = $("#id_match" + matchid + "_rTeam").attr("rTeamCn");
+             
+             $("#id_bet_modal").attr("a_matchid", matchid);
+             $("#id_bet_modal").attr("a_concede", concede);
+             $("#id_bet_modal").attr("a_side", side);
+             $("#id_bet_modal").attr("a_lTeamEn", lTeamEn);
+             $("#id_bet_modal").attr("a_lTeamCn", lTeamCn);
+             $("#id_bet_modal").attr("a_rTeamEn", rTeamEn);
+             $("#id_bet_modal").attr("a_rTeamCn", rTeamCn);
+             
+             var descCn, descEn;
+             if(side > 0){
+                 descCn = '你正在押注 俄罗斯 V.S. 沙特阿拉伯 净胜球大于CONCEDE。<br/>' + 
+                          '如果俄罗斯胜CONCEDE球以上，那么你获胜。<br/>' + 
+                          '如果俄罗斯净胜CONCEDE球或者更少，那么你将失去押注本金。';
+                 descEn = 'You are betting Russia V.S. SaudiArabia will more than CONCEDE goal.<br/>' +
+                          'If Russia win more than CONCEDE goal, You win.<br/>' + 
+                          'Otherwise your will lost your bet.';
+             }else if(side == 0){
+                 descCn = '你正在押注 俄罗斯 V.S. 沙特阿拉伯 净胜球等于CONCEDE。<br/>' + 
+                          '如果俄罗斯恰好胜CONCEDE球，那么你获胜。<br/>' + 
+                          '其他情况你将失去押注本金。';
+                 descEn = 'You are betting Russia V.S. SaudiArabia will exactly CONCEDE goal.<br/>' +
+                          'If Russia win exactly CONCEDE goal, You win.<br/>' + 
+                          'Otherwise your will lost your bet.';
+             }else {
+                 descCn = '你正在押注 俄罗斯 V.S. 沙特阿拉伯 净胜球小于CONCEDE。<br/>' + 
+                          '如果俄罗斯净胜CONCEDE球以下，那么你获胜。<br/>' + 
+                          '其他情况你将失去押注本金。';
+                 descEn = 'You are betting Russia V.S. SaudiArabia will less than CONCEDE goal.<br/>' +
+                          'If Russia lost more than CONCEDE goals, You win.<br/>' + 
+                          'Otherwise your will lost your bet.';
+             }
+             descCn = descCn = descCn.replace(/俄罗斯/g, lTeamCn).replace(/沙特阿拉伯/g, rTeamCn).replace(/CONCEDE/g, "" + concede);
+             descEn = descEn.replace(/Russia/g, lTeamEn).replace(/SaudiArabia/g, rTeamEn).replace(/CONCEDE/g, "" + concede);
+             
+             $("#id_bet_modal_desc_cn").html(descCn);
+             $("#id_bet_modal_desc_en").html(descEn);
+             
+             $('#id_bet_modal').show().modal();
+         }
+
+         function onSubmitBet(clear){
+             var matchid = $("#id_bet_modal").attr("a_matchid");
+             var concede = parseInt($("#id_bet_modal").attr("a_concede"));
+             var side = parseInt($("#id_bet_modal").attr("a_side"));
+             var lTeamEn = $("#id_bet_modal").attr("a_lTeamEn");
+             var lTeamCn = $("#id_bet_modal").attr("a_lTeamCn");
+             var rTeamEn = $("#id_bet_modal").attr("a_rTeamEn");
+             var rTeamCn = $("#id_bet_modal").attr("a_rTeamCn");
+             var money = "" + parseFloat($("#id_bet_price").val()).toFixed(4) + " " + confCoreSymbol;
+             if(clear == 'clear'){
+                 money = "0.0000 " + confCoreSymbol;
+             }
+             var gameid = parseInt(matchid) + parseInt(concede) + 5 + 1;
+             console.log("onSubmitBet - server:" + confServer +
+                         ", account:" + confAccount +
+                         ", matchid:" + matchid +
+                         ", gameid:" + gameid +
+                         ", decode gameid:" + Enu.modules.format.decodeName(gameid, false) +
+                         ", money:" + money +
+                         ", side:"+ side +
+                         ", lTeamEn:" + lTeamEn +
+                         ", rTeamEn" + rTeamEn +
+                         ", concede" + concede);
+
+             submitBet(confServer, confAccount, confKey, gameid, money, side, lTeamEn, rTeamEn,
+                       concede).then(function(e){
+                           notify("submit to ENU OK, transition id : " + e.transaction_id);
+                           console.log("submit to ENU OK, transition id : " + e.transaction_id);
+                           $('#id_bet_modal').modal('hide');
+                           $("#id_match"+matchid+"_date").trigger("click");
+                       }).catch(function(e){
+                           console.log("submit failed -> " + JSON.stringify(e));
+                           $('#id_bet_modal').modal('hide');
+                           alert("submit bet to ENU failed!");
+                       });
+         }
+         
+         function setupMyBet(matchid, allowBet){
+             loadUserBet(confServer, matchid, confAccount).then(function(reses){
+                 $.each(reses, function(idx, res){
+                     var idstr = null;
+                     if(idx - 5 >= 0){
+                         idstr = "#id_mine_concede_p" + (idx - 5);
+                     }else{
+                         idstr = "#id_mine_concede_n"+ (5 - idx);
+                     }
+                     if(allowBet){
+                         $(idstr + " a:eq(0)").text("").unbind().click(()=>onBet(matchid, idx - 5, 1));
+                         $(idstr + " a:eq(1)").text("").unbind().click(()=>onBet(matchid, idx - 5, 0));
+                         $(idstr + " a:eq(2)").text("").unbind().click(()=>onBet(matchid, idx - 5, -1));
+                     }else{
+                         $(idstr + " a:eq(0)").text("").unbind().click(()=>notify("game freezed, can not bet!"));
+                         $(idstr + " a:eq(1)").text("").unbind().click(()=>notify("game freezed, can not bet!"));
+                         $(idstr + " a:eq(2)").text("").unbind().click(()=>notify("game freezed, can not bet!"));
+                     }
+                     if(res.rows.length == 0 || res.rows[0].account != confAccount || res.rows[0].gameid != matchid + idx + 1){
+                         $(idstr + " a").text("");
+                     }else{
+                         var valStr = mytrim(res.rows[0].money);
+                         if(res.rows[0].side > 0){
+                             $(idstr + " a:eq(0)").text(valStr);
+                         }else if(res.rows[0].side == 0){
+                             $(idstr + " a:eq(1)").text(valStr);
+                         }else{
+                             $(idstr + " a:eq(2)").text(valStr);
+                         }
+                     }
+                     if(idx % 2 == 0){
+                         $(idstr).css("background-color","#f8fff8");
+                     }else{
+                         $(idstr).css("background-color","#fff8f8");
+                     }
+                 });
+             }).catch(function(e){
+                 console.log("loadUserBet -> failed : " + JSON.stringify(e));
+                 alert("load " + confAccount + "'s bet failed!");
+             });                 
+         }
+
+         function updateCredit(){
+             confAccount = $("#id_account").val();
+             $("#id_name_code").text("Name Code : " + Enu.modules.format.encodeName(confAccount, false));
+             if(confAccount == ""){
+                 console.log("need input account");
+                 return;
+             }
+             
+             getCredit(confServer, confAccount).then(function(res){
+                 //console.log("updateCredit OK -> ", JSON.stringify(res));
+                 $('#id_current_account').html("<strong>"+confAccount+"</strong>");
+                 if(res.rows[0].account == confAccount){                     
+                     $('#id_credit').attr("creditval", res.rows[0].money);
+                     $('#id_credit').attr("freezedval", res.rows[0].freezed);
+                     $('#id_credit_using').text(res.rows[0].money);
+                     $('#id_credit_freezed').text(res.rows[0].freezed);
+                 }else{
+                     console.log("updateCredit got wrong account " + res.rows[0].account + ", need : " + confAccount);
+                     $('#id_credit').attr("creditval", res.rows[0].money);
+                     $('#id_credit').attr("freezedval", res.rows[0].freezed);
+                     $('#id_credit_using').text("-.---- " + confCoreSymbol);
+                     $('#id_credit_freezed').text("-.---- " + confCoreSymbol);                     
+                     alert("query credit for " + confAccount + " failed, please deposit first!");
+                 }
+             }).catch(function(res){
+                 console.log("updateCredit failed -> ", JSON.stringify(res));
+                 $('#id_credit').attr("creditval", 0);
+                 $('#id_credit').attr("freezedval", 0);
+                 $('#id_credit_using').text("-.---- " + confCoreSymbol);
+                 $('#id_credit_freezed').text("-.---- " + confCoreSymbol);
+                 alert("query credit for " + confAccount + " failed!");
+             });
+         }
+
+         function updateStats(){
+             getGameStat(confServer).then(function(e){
+                 //console.log("getGameStat OK");
+                 var stat = e.rows[0];
+                 $('#id_stat_incoming').text(stat.stat_incoming);
+                 $('#id_stat_outcoming').text(stat.stat_outcoming);
+                 $('#id_stat_holding').text(stat.stat_holding);
+                 $('#id_stat_profit').text(stat.stat_profit);
+                 $('#id_stat_credit').text(stat.stat_credit);
+                 $('#id_stat_bet').text(stat.stat_bet);
+             }).catch(function(e){
+                 console.log("getGameStat failed");
+                 alert("query game owner's balance failed");
+             });
+         }
+
+         function onChangeServer(svr){
+             $("#id_server").val(svr);
+             localStorage.setItem("server", svr);
+             window.location.href="/App/Soccer?server="+svr;
+             return false;
+         }
+
+         $(window).ready(function(){
+             onPage("account");
+             confServer = localStorage.getItem("server");
+             confAccount = localStorage.getItem("account");
+             confKey = localStorage.getItem("active_key");
+
+             if(confServer == null || confServer == ""){
+                 console.log("confServer is : " + confServer);
+                 localStorage.setItem("server", "https://api.enumivo.com/");
+                 console.log("confServer write as " + localStorage.getItem("server"));
+                 window.location.href="/App/Soccer?server=https://api.enumivo.com/";
+                 return false;
+             }
+
+             if(!window.location.href.endsWith(confServer)){
+                 console.log(window.location.href + " not end with " + confServer);
+                 window.location.href="/App/Soccer?server="+confServer;
+                 return false;
+             }
+
+             $("#id_server").val(confServer);
+             $("#id_account").val(confAccount);
+             $("#id_active_key").val(confKey);
+
+             $("#id_bet_price").trigger("input");
+             
+             loadMatches(confServer).then(function(e){
+                 notify("Connect to server ok!");
+                 allEnuMatches = e.rows;
+                 buildMatchList();
+                 updateCredit();
+                 updateStats();
+             }).catch(function(e){
+                 alert("Can not access server, check your configuration please!");
+                 console.log("->" + e);
+             });             
+         });
+        </script>
+    </head>
+    
+    <body>
+        <div class="modal" id="id_bet_modal" tabindex="-1" role="dialog" aria-labelledby="id_bet_modal_label" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="id_bet_modal_label">确认下注 Confirm Bet</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="id_bet_modal_desc_cn" class="text-danger"></div>
+                        <div class="dropdown-divider"></div>
+                        <div id="id_bet_modal_desc_en" class="text-danger"></div>
+                        <div class="dropdown-divider"></div>
+                        <div class="row">
+                            <div class="col-6">
+                                <input id="id_bet_price" type="range" min="0.1" max="1" value="0.1" step="0.01" class="slider" id="myRange"
+                                       oninput="$('#id_bet_price_label').text('BET ' + $('#id_bet_price').val() + ' ' + confCoreSymbol)">
+                            </div>
+                            <div class="col-4"><strong id="id_bet_price_label" ></strong></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-warning" hint="take back bet from game." onclick="onSubmitBet('clear')">Clear</button>
+                        <button type="button" class="btn btn-primary" hint="submit bet to ENU" onclick="onSubmitBet()">Submit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="navbar navbar-expand">
+            <div class="collapse navbar-collapse" id="titleBar">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a id="id_account_link" class="nav-link active" href="#" onclick="onPage('account');">Configure</a>
+                    </li>
+                    <li class="nav-item">
+                        <a id="id_bet_link" class="nav-link" href="#" onclick="onPage('bet');">Bet</a>
+                    </li>
+                    <li class="nav-item">
+                        <a id="id_help_link" class="nav-link" href="#" onclick="onPage('help');">Help</a>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="btn-group">
+                <button id="id_current_account" type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <strong>----</strong>
+                </button>
+                <div class="dropdown-menu">                    
+                    <a class="dropdown-item" href="#" onclick="onDeposit('1.0000 ' + confCoreSymbol);">Deposit 1 ENU/SYS</a>
+                    <a class="dropdown-item" href="#" onclick="onApplyWithdraw();">Apply withdraw</a>
+                    <a class="dropdown-item" href="#" onclick="onCancelWithdraw();">Cancel withdraw</a>
+                </div>
+            </div>
+            
+            <span id="id_credit" class="">
+                <strong>Credit</strong>
+                <span style="width:5px"></span>
+                <span id="id_credit_using">-.---- ***</span>
+                <span style="width:10px"></span>
+                <strong>Freezed</strong>
+                <span style="width:5px"></span>
+                <span id="id_credit_freezed">-.---- ***</span>
+            </span>
+            <span style="width:3rem"></span>
+            <a class="navbar-brand" href="#"><strong>FIFA2018</strong><img src="/img/FIFAWorldCup.png" style="height:3rem;width:3rem"/></a>
+        </nav>
+        
+        <div id="id_help_page" class="hcenter" style="width:40rem">
+            <div>
+                <H3 class="text-danger">警告
+                </H3>
+                <strong class="text-danger">为了安全，绝对不要使用持有超过10ENU的账号参与游戏!</strong>
+                <h4>前言</h4>
+                <p>
+                    本网页归档在 <a href="https://github.com/gpmn/socelec">https://github.com/gpmn/socelec</a> <br/>
+                    该项目原计划作为electon打包发布，但是过程中发现打包结果太大，最终改用网页发布。有兴趣的朋友可以下载后直接执行 "electron ." , 比在线执行略微安全一些。<br/>
+                    由于ENU启动过晚，本项目也落地过晚，所以UI不太好看。同时作者还有其他项目要继续，也不想再投入过多精力。<br/>
+                    但是，不管有多少人使用，我会维护到世界杯结束。<br/>
+                    你可以在微信公众号"呆萌小机器人"和"威武霸气大机器人"的后台，或者微信号gpmnlxdw，或者github联系我。<br/>
+                    <strong class="text-info">随时欢迎交流使用疑问、Dapp的开发经验、以及Dapp的奇思妙想</strong>
+                </p>
+                <h4>风险说明</h5>
+                    <p>
+                        本网页不会试图上传您的私钥，也几乎只和ENU主网交互，本网页也尽量做到了避免被跨域攻击。<span class="text-danger">但是毕竟在线使用私钥是一个很不安全的行为，存在重大风险。</span>请仔细阅读并理解如下内容：
+                    </p>
+                    <div>
+                        <li>本前端需要输入用户的私钥，这是一个高危行为，<span class="text-danger">绝对不要在公共计算机使用。</span></li>
+                        <li>为了使用方便，本网页会将将您的私钥保存到html5的localstorage。通常来说，localstorage比较安全，但是如果有意外的bug，localstorage可能被跨域攻击。</li>
+                        <li>推荐创建一个小号帐号进行游戏，<span class="text-danger">同时切记小号帐号的私钥不能和大号相同，否则大号会被连带泄密。</span></li>
+                        <li>本Dapp核心逻辑在ENU区块链上完成，但是输入比赛结果这一步没有使用预言机/仲裁机，而是有fifagambling帐号负责输入并公示</li>
+                    </div>
+                    <p class="text-info">
+                        注:有一个Scatter的浏览器插件可以为用户保存账户名和私钥，但是该插件不支持手机版，所以最终没有选用该方案。
+                    </p>
+                    <h4 id="item-1">规则简介</h4>
+                    <p>
+                        https://www.jiqix.com/App/Soccer 是一个基于ENU智能合约的赌球Dapp网页前端。该Dapp部署在ENU的fifagambling帐号之下。
+                        该合约目前实现的赌球规则如下:
+                    </p>
+                    <div>
+                        <li>1. 只支持客户对赌。</li>
+                        <li>2. 每一局足球比赛，提供11个赌博合约，让球数从-5~5个不等。</li>
+                        <li>3. 每个赌博合约，可以押注胜负平三种结果；押正确的一方，赢得另外两方的押注。</li>
+                        <li>4. 押注前，需要向fifagambling帐号转账，以充值。每一次押注额度在0.1ENU到1ENU之间。</li>
+                        <li>5. 每个赌博合约，<span class="text-info">如果没有赌博对手，即使压错也退还赌注。</span></li>
+                        <li>6. 合约收取10%的赢利抽成，请理解ENU这种地租模式，需要收钱才能生存，谢谢理解！</li>
+                        <li>7. 赛前10分钟随意下注或者取消。比赛开始前10分钟后停止下注，也不能再取消。</li>
+                        <li>8. 比赛结束后，由fifagambling帐号调用合约的freeze方法写入比赛结果，公示一段时间无异议后，由 fifagambling帐号调用合约的resolve发起结算。</li>
+                        <li>9. 游戏者的资金，如果需要提取，申请withdraw，定期结算发还游戏者本身帐号。</li>
+                    </div>
+                    <h4>游戏步骤</h4>
+                    <div>
+                        <li class="text-danger">首先，强烈推荐您创建一个新的ENU游戏帐号，并使用和主账户不同的active 私钥，并向该游戏帐号转账1ENU甚至更少。</li>
+                        <li>其次，在Congfig页面，选择ENU接入点服务器、填入个人的ENU帐号。如果不下赌注，不需要填私钥。</li>
+                        <li>最后，在Bet页面右侧，"Bet of Xxxxx"的框中，点击对应的比分和胜负，进行下注。</li>
+                        <li>注意：下注后，由于ENU做块的时间等问题，可以主动刷新一下，确保下注成功。如果下注失败，资金不受影响。</li>
+                        <li>不再玩游戏后，申请提款，由fifagambling帐号定期结算资金，完成转账</li>
+                    </div>
+            </div>            
+        </div>
+        
+        <div id="id_account_page" class="hcenter" style="width:40rem">
+            <div class="card">
+                <div class="card-header text-center">
+                    <H3>Configure</H3>
+                </div>
+                
+                <div class="card-body">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Server addr</span>
+                        </div>
+                        <input class="form-control" id="id_server" aria-describedby="basic-addon3" type="url" readonly="readonly">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Servers</button>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="#" onclick='onChangeServer($(this).text())'>https://api.enumivo.com/</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Account</span>
+                        </div>
+                        <input class="form-control" id="id_account" aria-describedby="basic-addon3" type="text"
+                               placeholder="account" onchange="updateCredit()">
+                        <div class="input-group-append">
+                            <span id="id_name_code" style="width:20rem" class="input-group-text"></span>
+                        </div>
+                    </div>
+
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Active key</span>
+                        </div>
+                        <input class="form-control" id="id_active_key" aria-describedby="basic-addon3" type="password" placeholder="active key of account">
+                    </div>
+                    <div class="input-group mb-3">
+                        <span>First, we strongly recommend to <span class="text-danger">create a dummy acount</span> to play this game!</span>
+                        <span>Second, active key is enough, <span class="text-danger">don't input your owner key!</span></span>
+                    </div>
+                    
+                    <div class="input-group mb-3">
+                        <a href="#" class="btn btn-primary hcenter" onclick="onSave()">Save</a>
+                    </div>
+                    
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header text-center">
+                    <H3>Game Admin's statistics</H3>   
+                </div>
+                <div class="card-body" style="">
+                    <div class="row"><span class="col-3"></span><strong class="col-3">Incoming</strong><span id="id_stat_incoming" class="col-3 text-success"></span><span class="col-3"></span></div>
+                    <div class="row"><span class="col-3"></span><strong class="col-3">Outcoming</strong><span id="id_stat_outcoming" class="col-3 text-danger"></span><span class="col-3"></span></div>
+                    <div class="row"><span class="col-3"></span><strong class="col-3">Holding</strong><span id="id_stat_holding" class="col-3 text-success"></span><span class="col-3"></span></div>
+                    <div class="row"><span class="col-3"></span><strong class="col-3">Profit</strong><span id="id_stat_profit" class="col-3"></span><span class="col-3"></span></div>
+                    <div class="row"><span class="col-3"></span><strong class="col-3">Credit</strong><span id="id_stat_credit" class="col-3"></span><span class="col-3"></span></div>
+                    <div class="row"><span class="col-3"></span><strong class="col-3">Bet</strong><span id="id_stat_bet" class="col-3"></span><span class="col-3"></span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="id_bet_page">
+            <div class="container">
+                <div id="id_game_list">
+                    <div id="id_bet_overview_title" class="row gridbd">
+                        <div class="col-4">
+                            <h4 style="text-align:center">--</h4>
+                        </div>
+                        <div class="col-2">
+                            <img style="width:25px;height:25px;margin:5px" src="/img/football.png">
+                        </div>
+                        <div class="col-2">
+                            <img style="width:25px;height:25px;margin:5px" src="/img/football.png">
+                        </div>
+                        <div class="col-4">
+                            <h4 style="text-align:center">--</h4>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="gridbd col-6">                    
+                            <div class="row">
+                                <h4 class="vcenter hcenter">Overview</h4>
+                            </div>
+                            <div class="row text-light bg-secondary">
+                                <div class="col-3"><h6></h6></div>
+                                <div class="col-3"><h6>胜Win</h6></div>
+                                <div class="col-3"><h6>平Punch</h6></div>
+                                <div class="col-3"><h6>负Lose</h6></div>
+                            </div>
+
+                            <div id="id_ov_concede_n5" class="row">
+                                <div class="col-3 "><strong>-5球</strong></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                            </div>
+                            <div id="id_ov_concede_n4" class="row">
+                                <div class="col-3"><strong>-4球</strong></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                            </div>                            
+                            <div id="id_ov_concede_n3" class="row">
+                                <div class="col-3"><strong>-3球</strong></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                            </div>                            
+                            <div id="id_ov_concede_n2" class="row">
+                                <div class="col-3"><strong>-2球</strong></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                            </div>                            
+                            <div id="id_ov_concede_n1" class="row">
+                                <div class="col-3"><strong>-1球</strong></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                            </div>                            
+                            <div id="id_ov_concede_p0" class="row">
+                                <div class="col-3"><strong>0球</strong></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                            </div>                            
+                            <div id="id_ov_concede_p1" class="row">
+                                <div class="col-3"><strong>1球</strong></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                            </div>                            
+                            <div id="id_ov_concede_p2" class="row">
+                                <div class="col-3"><strong>2球</strong></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                            </div>                            
+                            <div id="id_ov_concede_p3" class="row">
+                                <div class="col-3"><strong>3球</strong></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                            </div>
+                            <div id="id_ov_concede_p4" class="row">
+                                <div class="col-3"><strong>4球</strong></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                            </div>
+                            <div id="id_ov_concede_p5" class="row">
+                                <div class="col-3"><strong>5球</strong></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                                <div class="col-3"></div>
+                            </div>
+                        </div>
+                        <div class="gridbd col-6">
+                            <div class="row">
+                                <h4 id="id_mybet_title" class="hcenter vcenter">My Bet</h4>
+                            </div>
+                            <div class="row bg-secondary text-light">
+                                <div class="col-3"><h6></h6></div>
+                                <div class="col-3"><h6>胜Win</h6></div>
+                                <div class="col-3"><h6>平Punch</h6></div>
+                                <div class="col-3"><h6>负Lose</h6></div>
+                            </div>
+                            
+                            <div id="id_mine_concede_n5" class="row enlight">
+                                <div class="col-3"><strong>-5球</strong></div>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                            </div>                            
+                            <div id="id_mine_concede_n4" class="row enlight">
+                                <div class="col-3"><strong>-4球</strong></div>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                            </div>                            
+                            <div id="id_mine_concede_n3" class="row enlight">
+                                <div class="col-3"><strong>-3球</strong></div>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                            </div>                            
+                            <div id="id_mine_concede_n2" class="row enlight">
+                                <div class="col-3"><strong>-2球</strong></div>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                            </div>                            
+                            <div id="id_mine_concede_n1" class="row enlight">
+                                <div class="col-3"><strong>-1球</strong></div>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                            </div>                            
+                            <div id="id_mine_concede_p0" class="row enlight">
+                                <div class="col-3"><strong>0球</strong></div>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                            </div>                            
+                            <div id="id_mine_concede_p1" class="row enlight">
+                                <div class="col-3"><strong>1球</strong></div>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                            </div>
+                            <div id="id_mine_concede_p2" class="row enlight">
+                                <div class="col-3"><strong>2球</strong></div>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                            </div>                            
+                            <div id="id_mine_concede_p3" class="row enlight">
+                                <div class="col-3"><strong>3球</strong></div>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                            </div>
+                            <div id="id_mine_concede_p4" class="row enlight">
+                                <div class="col-3"><strong>4球</strong></div>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                            </div>
+                            <div id="id_mine_concede_p5" class="row enlight">
+                                <div class="col-3"><strong>5球</strong></div>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                                <a href="#" class="col-3"></a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row gridbd bg-secondary text-light">
+                        <strong class="hcenter vcenter">Matches</strong>
+                    </div>
+                    
+                    <div id="id_match_list" class="gridbd col-12 pre-scrollable">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    
+</html>
+
