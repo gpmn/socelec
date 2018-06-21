@@ -12,4 +12,6 @@
   then run it with electron:  
   electron .
 
+  and an online page was deployed at here : https://www.jiqix.com/App/Soccer , you are welcome to use it.
+
 ![alt text](https://github.com/gpmn/socelec/blob/master/screenshot.png?raw=true)
