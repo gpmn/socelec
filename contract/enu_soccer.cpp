@@ -54,7 +54,7 @@ public:
                     });
           }          
           enumivo_assert(!ctrlItr->ext1, "contract freezed"); // ext1 means contractFreezed
-          enumivo_assert(code == N(eosio.token), "invalid contract source");
+          enumivo_assert(code == N(enu.token), "invalid contract source");
           if(t.from == _self){
                //enumivo::print("ignore transfer notification from myself\n");
                return;
@@ -216,7 +216,7 @@ public:
                          c.freezed.amount = 0;
                     });
                enumivo::currency::inline_transfer(_self, fIter->account,
-                                                enumivo::extended_asset(quantity, N(eosio.token)), "withdraw");
+                                                enumivo::extended_asset(quantity, N(enu.token)), "withdraw");
                stat_outcoming += quantity;
                stat_holding -= quantity;
                stat_credit -= quantity;
@@ -418,7 +418,7 @@ public:
 
           require_auth(account);
           enumivo_assert(side == 1 || side == 0 || side == -1, "side must be [-1,0,1]");
-          enumivo_assert(money.symbol == CORE_SYMBOL, "accept EOS only");
+          enumivo_assert(money.symbol == CORE_SYMBOL, "accept ENU only");
           enumivo_assert(money.is_valid(), "bet meony invalid");
           enumivo_assert(money.amount == 0 ||
                        (money.amount >= MIN_AMOUNT && money.amount <= MAX_AMOUNT),

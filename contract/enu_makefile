@@ -1,0 +1,9 @@
+all:
+	enumivocpp -g enu_soccer.abi enu_soccer.cpp
+	enumivocpp -o enu_soccer.wast enu_soccer.cpp
+setup:
+#	clenu set contract soccer ./ ./soccer.wast ./soccer.abi -p soccer
+	enucli set contract fifagambling ./ ./enu_soccer.wast ./enu_soccer.abi -p fifagambling
+
+clean:
+	-rm -rf enu_soccer.wast enu_soccer.abi
