@@ -239,7 +239,7 @@ function deposit(enuAddr, account, activeKey, money){
     return enu.transaction({
         actions: [
             {
-                account: "enuio.token",
+                account: "enu.token",
                 name: "transfer",
                 authorization: [{
                     actor: account,
